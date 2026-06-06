@@ -115,7 +115,7 @@ const server = http.createServer(async (req, res) => {
 
   // 2. Static File Handler
   let safePath = pathname === '/' ? '/index.html' : pathname;
-  const filePath = path.join(__dirname, safePath);
+  const filePath = path.join(__dirname, 'public', safePath);
 
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
     const ext = path.extname(filePath);
@@ -124,7 +124,7 @@ const server = http.createServer(async (req, res) => {
     fs.createReadStream(filePath).pipe(res);
   } else {
     // Single-Page Application (SPA) routing fallback
-    const indexPath = path.join(__dirname, 'index.html');
+    const indexPath = path.join(__dirname, 'public', 'index.html');
     if (fs.existsSync(indexPath)) {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       fs.createReadStream(indexPath).pipe(res);
