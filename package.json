@@ -1,0 +1,16 @@
+{
+  "name": "beanforge",
+  "version": "1.0.0",
+  "description": "Full-stack Coffee Procurement + Café Ordering System",
+  "main": "index.html",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.9.7"
+  }
+}

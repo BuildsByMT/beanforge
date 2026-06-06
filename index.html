@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BeanForge | Coffee Procurement & Café Ordering System</title>
+  <meta name="description" content="BeanForge is a premium global platform for wholesale coffee bean procurement and direct retail café ordering.">
+  
+  <!-- Custom Font & Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- FontAwesome Icons for modern visuals -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <div class="aurora-container">
+    <!-- Shifting Aurora Background Blobs -->
+    <div class="aurora-bg"></div>
+
+    <!-- Navigation Header -->
+    <header id="main-header">
+      <div class="nav-container">
+        <a href="#" class="logo">
+          <i class="fa-solid fa-mug-hot"></i> Bean<span>Forge</span>
+        </a>
+        <ul class="nav-links">
+          <li><a href="#" class="active" onclick="setView('home')">Home</a></li>
+          <li><a href="#catalog" onclick="setView('home')">Catalog</a></li>
+          <li><a href="#features" onclick="setView('home')">Features</a></li>
+          <li class="user-only" style="display: none;"><a href="#dashboard" onclick="setView('dashboard')">Dashboard</a></li>
+        </ul>
+        <div class="nav-actions">
+          <button class="cart-icon-btn" onclick="toggleCartDrawer(true)" title="Open Cart">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <span class="cart-badge" id="cart-badge-count">0</span>
+          </button>
+          
+          <div id="auth-actions-container">
+            <button class="auth-btn" onclick="openAuthModal('login')">Sign In</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Landing View (Home) -->
+    <div id="home-view">
+      
+      <!-- Hero Banner -->
+      <section class="hero">
+        <div class="hero-grid">
+          <div class="hero-content">
+            <h1 class="shiny-title">Forge Your Perfect Coffee Experience</h1>
+            <p>From globally sourced wholesale coffee beans to fresh artisanal ready-to-sip drinks, BeanForge merges premium procurement with instant cafe ordering.</p>
+            <div class="hero-actions">
+              <a href="#catalog" class="border-beam-btn">Browse Catalog</a>
+              <a href="#features" class="secondary-btn">Explore Features</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bento Grid Section -->
+      <section class="bento-section" id="features">
+        <div class="section-header">
+          <h2>Engineered for Coffee Enthusiasts & Professionals</h2>
+          <p>Explore what makes BeanForge the premier destination for coffee commerce.</p>
+        </div>
+        <div class="bento-grid">
+          <!-- Card 1: Large -->
+          <div class="bento-card glass-panel bento-card-large">
+            <i class="fa-solid fa-globe bento-icon"></i>
+            <h3>Direct Farm Sourcing</h3>
+            <p>We work closely with sustainable microlot farms across Ethiopia, Colombia, and Sumatra to secure the highest-grade specialty green and roasted beans. Every batch is traceable back to its origin.</p>
+            <i class="fa-solid fa-seedling bento-card-image"></i>
+          </div>
+          <!-- Card 2 -->
+          <div class="bento-card glass-panel">
+            <i class="fa-solid fa-fire-flame-simple bento-icon"></i>
+            <h3>Micro-Roasting</h3>
+            <p>Beans are roasted in small quantities using advanced temperature curves to extract unique, vibrant tasting notes.</p>
+          </div>
+          <!-- Card 3 -->
+          <div class="bento-card glass-panel">
+            <i class="fa-solid fa-truck-fast bento-icon"></i>
+            <h3>Express Delivery</h3>
+            <p>Get ready drinks hot or iced in minutes, and bulk roasted beans shipped straight to your roasting house.</p>
+          </div>
+          <!-- Card 4: Large -->
+          <div class="bento-card glass-panel bento-card-large">
+            <i class="fa-solid fa-handshake bento-icon"></i>
+            <h3>Wholesale Quotes & Contracts</h3>
+            <p>Submit customized quote queries for high-volume orders. Lock in seasonal beans, set delivery schedules, and receive tier-based discount pricing verified directly by our supply partners.</p>
+            <i class="fa-solid fa-file-invoice-dollar bento-card-image"></i>
+          </div>
+        </div>
+      </section>
+
+      <!-- Product Catalog Section -->
+      <section class="catalog-section" id="catalog">
+        <div class="section-header">
+          <h2>The BeanForge Catalog</h2>
+          <p>Filter through our selection of wholesale beans and hand-crafted café drinks.</p>
+        </div>
+        
+        <!-- Filter Tabs -->
+        <div class="filter-bar">
+          <button class="filter-btn active" onclick="filterCatalog('All', this)">All Products</button>
+          <button class="filter-btn" onclick="filterCatalog('Coffee Beans', this)">Coffee Beans</button>
+          <button class="filter-btn" onclick="filterCatalog('Espresso', this)">Espresso</button>
+          <button class="filter-btn" onclick="filterCatalog('Cold Coffee', this)">Cold Coffee</button>
+          <button class="filter-btn" onclick="filterCatalog('Cappuccino', this)">Cappuccino</button>
+          <button class="filter-btn" onclick="filterCatalog('Latte', this)">Latte</button>
+          <button class="filter-btn" onclick="filterCatalog('Matcha Latte', this)">Matcha</button>
+          <button class="filter-btn" onclick="filterCatalog('Mocha', this)">Mocha</button>
+        </div>
+
+        <!-- Catalog Grid -->
+        <div class="products-grid" id="catalog-products-grid">
+          <!-- Dynamic Products inject here -->
+          <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px 0;">
+            <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem; margin-bottom: 15px; color: var(--accent-gold);"></i>
+            <p>Loading premium catalog...</p>
+          </div>
+        </div>
+      </section>
+
+    </div> <!-- End Home View -->
+
+    <!-- Dashboard View (Only visible to logged-in users) -->
+    <div id="dashboard-view" style="display: none;">
+      <section class="dashboard-section" id="dashboard" style="display: block;">
+        <div class="section-header" style="margin-top: 80px;">
+          <h2 class="shiny-title">Customer Dashboard</h2>
+          <p>Track your ready drink orders and wholesale bean procurement quotes.</p>
+        </div>
+        
+        <div class="dashboard-grid">
+          <!-- Retail Orders panel -->
+          <div class="dash-panel glass-panel">
+            <h3><i class="fa-solid fa-receipt" style="color: var(--accent-gold); margin-right: 10px;"></i> Order History</h3>
+            <div class="dash-list" id="dashboard-orders-list">
+              <p style="color: var(--text-muted); text-align: center; padding: 40px 0;">No orders placed yet.</p>
+            </div>
+          </div>
+          
+          <!-- Wholesale Quotes panel -->
+          <div class="dash-panel glass-panel">
+            <h3><i class="fa-solid fa-file-contract" style="color: var(--accent-gold); margin-right: 10px;"></i> Wholesale Bean Quotes</h3>
+            <div class="dash-list" id="dashboard-quotes-list">
+              <p style="color: var(--text-muted); text-align: center; padding: 40px 0;">No quotes requested yet.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div> <!-- End Dashboard View -->
+
+    <!-- Footer -->
+    <footer>
+      <p>&copy; 2026 <span>BeanForge</span> Inc. All rights reserved. Designed for ultimate coffee trading.</p>
+    </footer>
+
+    <!-- Slide-out Shopping Cart Drawer -->
+    <div class="cart-drawer" id="shopping-cart-drawer">
+      <div class="cart-header">
+        <h3><i class="fa-solid fa-cart-shopping" style="color: var(--accent-gold); margin-right: 8px;"></i> Your Cart</h3>
+        <button class="close-btn" onclick="toggleCartDrawer(false)">&times;</button>
+      </div>
+      
+      <div class="cart-items-container" id="drawer-items-list">
+        <!-- Dynamic Cart items inject here -->
+        <p style="color: var(--text-muted); text-align: center; margin-top: 40px;">Your cart is currently empty.</p>
+      </div>
+      
+      <div class="cart-footer">
+        <div class="cart-total-row">
+          <span>Subtotal:</span>
+          <span class="cart-total-price" id="cart-total-display">$0.00</span>
+        </div>
+        <button class="checkout-btn" onclick="checkoutCart()">Place Order</button>
+      </div>
+    </div>
+
+    <!-- Wholesale Bean Quote Modal -->
+    <div class="modal-overlay" id="quote-modal">
+      <div class="modal-content glass-panel">
+        <button class="modal-close" onclick="closeQuoteModal()">&times;</button>
+        <h3 class="modal-title">Wholesale Procurement Quote</h3>
+        <form id="quote-request-form" onsubmit="submitQuoteRequest(event)">
+          <input type="hidden" id="quote-product-id">
+          
+          <div class="form-group">
+            <label class="form-label">Selected Coffee Bean</label>
+            <input type="text" class="form-input" id="quote-product-name" readonly style="background: rgba(255, 255, 255, 0.01); color: var(--accent-gold-light);">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="quote-quantity">Quantity (in lbs - minimum 50 lbs)</label>
+            <input type="number" class="form-input" id="quote-quantity" min="50" value="50" required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="quote-notes">Procurement Specifications / Roaster Notes</label>
+            <textarea class="form-input" id="quote-notes" rows="4" placeholder="Mention shipping schedule, roast details, packaging preferences..." style="resize: none;"></textarea>
+          </div>
+          
+          <button type="submit" class="submit-btn">Request Wholesale Contract</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Auth Modal (Login / Signup) -->
+    <div class="modal-overlay" id="auth-modal">
+      <div class="modal-content glass-panel">
+        <button class="modal-close" onclick="closeAuthModal()">&times;</button>
+        <h3 class="modal-title" id="auth-modal-title">Sign In to BeanForge</h3>
+        
+        <!-- Login Form -->
+        <form id="login-form" onsubmit="handleAuthSubmit(event, 'login')">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email Address</label>
+            <input type="email" class="form-input" id="login-email" required placeholder="name@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password</label>
+            <input type="password" class="form-input" id="login-password" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="submit-btn">Access Account</button>
+          <div class="modal-switch">
+            Don't have an account? <a href="#" onclick="switchAuthTab('signup')">Create one here</a>
+          </div>
+        </form>
+        
+        <!-- Signup Form (Hidden initially) -->
+        <form id="signup-form" onsubmit="handleAuthSubmit(event, 'register')" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="signup-username">Username</label>
+            <input type="text" class="form-input" id="signup-username" required placeholder="coffee_lover">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signup-email">Email Address</label>
+            <input type="email" class="form-input" id="signup-email" required placeholder="name@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signup-password">Password</label>
+            <input type="password" class="form-input" id="signup-password" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="submit-btn">Create Account</button>
+          <div class="modal-switch">
+            Already have an account? <a href="#" onclick="switchAuthTab('login')">Sign in here</a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="notification-toast-container"></div>
+
+  </div> <!-- End Aurora Container -->
+
+  <!-- Client-side Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>
