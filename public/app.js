@@ -195,7 +195,7 @@ function renderCatalog() {
         <p class="product-desc" title="${p.description}">${p.description || 'No description available.'}</p>
         <div class="product-footer">
           <div class="product-price">
-            $${Number(p.price).toFixed(2)}
+            Rs. ${Number(p.price).toLocaleString()}
             <span>${p.type === 'bean' ? '/lb' : ''}</span>
           </div>
         </div>
@@ -235,7 +235,7 @@ function updateCartUI() {
 
   if (state.cart.length === 0) {
     itemsContainer.innerHTML = `<p style="color: var(--text-muted); text-align: center; margin-top: 40px;">Your cart is currently empty.</p>`;
-    totalDisplay.textContent = '$0.00';
+    totalDisplay.textContent = 'Rs. 0';
     return;
   }
 
@@ -252,7 +252,7 @@ function updateCartUI() {
       <img src="${item.image_url}" alt="${item.name}" class="cart-item-img">
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-price">$${Number(item.price).toFixed(2)} x ${item.quantity}</div>
+        <div class="cart-item-price">Rs. ${Number(item.price).toLocaleString()} x ${item.quantity}</div>
         <div class="cart-item-qty-actions">
           <button class="qty-btn" onclick="handleUpdateCartQty(${item.product_id}, ${item.quantity - 1})">-</button>
           <span style="font-size: 0.9rem; font-weight:600; min-width: 15px; text-align: center;">${item.quantity}</span>
@@ -266,7 +266,7 @@ function updateCartUI() {
     itemsContainer.appendChild(div);
   });
 
-  totalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+  totalDisplay.textContent = `Rs. ${subtotal.toLocaleString()}`;
 }
 
 function renderOrders(orders) {
@@ -300,7 +300,7 @@ function renderOrders(orders) {
           <div style="font-size: 0.8rem; color: var(--text-muted);">Type: ${order.order_type === 'bean' ? 'Wholesale Bean Delivery' : 'Café Pickup'}</div>
         </div>
         <div style="font-weight: 700; color: var(--accent-gold); font-size: 1.1rem;">
-          $${Number(order.total_price).toFixed(2)}
+          Rs. ${Number(order.total_price).toLocaleString()}
         </div>
       </div>
     `;
@@ -337,7 +337,7 @@ function renderQuotes(quotes) {
         </div>
         <div style="text-align: right;">
           <div style="font-size: 0.75rem; color: var(--text-muted);">Est. base price</div>
-          <div style="font-weight: 700; color: var(--accent-gold); font-size: 1rem;">$${(Number(q.base_price) * q.quantity_lbs).toFixed(2)}</div>
+          <div style="font-weight: 700; color: var(--accent-gold); font-size: 1rem;">Rs. ${(Number(q.base_price) * q.quantity_lbs).toLocaleString()}</div>
         </div>
       </div>
     `;
