@@ -578,8 +578,15 @@ async function handleAuthSubmit(event, action) {
 function updateNavForLoggedInUser() {
   const container = document.getElementById('auth-actions-container');
   const userLinks = document.querySelectorAll('.user-only');
+  const adminLinks = document.querySelectorAll('.admin-only');
 
   userLinks.forEach(link => link.style.display = 'block');
+  
+  if (state.user && state.user.role === 'admin') {
+    adminLinks.forEach(link => link.style.display = 'block');
+  } else {
+    adminLinks.forEach(link => link.style.display = 'none');
+  }
 
   if (state.user) {
     const initial = state.user.username ? state.user.username.charAt(0).toUpperCase() : 'U';
@@ -615,6 +622,9 @@ function logoutUser() {
   const userLinks = document.querySelectorAll('.user-only');
   userLinks.forEach(link => link.style.display = 'none');
 
+  const adminLinks = document.querySelectorAll('.admin-only');
+  adminLinks.forEach(link => link.style.display = 'none');
+
   setView('home');
   showToast('Logged out successfully', 'info');
   
@@ -628,26 +638,180 @@ function logoutUser() {
 function setView(viewName) {
   const homeView = document.getElementById('home-view');
   const dashView = document.getElementById('dashboard-view');
-  const navHome = document.querySelector('header a[href="#"]');
-  const navDash = document.querySelector('header a[href="#dashboard"]');
+  const adminView = document.getElementById('admin-view');
+  
+  const navLinks = document.querySelectorAll('.nav-links a');
+  navLinks.forEach(link => link.classList.remove('active'));
 
-  if (viewName === 'dashboard') {
+  if (viewName === 'admin') {
+    if (!state.token || !state.user || state.user.role !== 'admin') {
+      showToast('Forbidden: Admin access required', 'error');
+      setView('home');
+      return;
+    }
+    homeView.style.display = 'none';
+    dashView.style.display = 'none';
+    adminView.style.display = 'block';
+    
+    const navAdmin = document.querySelector('header a[href="#admin"]');
+    if (navAdmin) navAdmin.classList.add('active');
+    
+    fetchAdminData();
+  } else if (viewName === 'dashboard') {
     homeView.style.display = 'none';
     dashView.style.display = 'block';
+    adminView.style.display = 'none';
     
-    if (navHome) navHome.classList.remove('active');
+    const navDash = document.querySelector('header a[href="#dashboard"]');
     if (navDash) navDash.classList.add('active');
     
-    // Fetch latest dashboard records
     fetchDashboardData();
   } else {
     homeView.style.display = 'block';
     dashView.style.display = 'none';
+    adminView.style.display = 'none';
     
+    const navHome = document.querySelector('header a[href="#"]');
     if (navHome) navHome.classList.add('active');
-    if (navDash) navDash.classList.remove('active');
   }
 }
+
+// --- Admin Panel API Actions ---
+
+async function fetchAdminData() {
+  if (!state.token || !state.user || state.user.role !== 'admin') return;
+
+  try {
+    const data = await apiRequest('/admin');
+    
+    // 1. Stats card counts
+    document.getElementById('admin-stat-users').textContent = data.stats.users;
+    document.getElementById('admin-stat-orders').textContent = data.stats.orders;
+    document.getElementById('admin-stat-products').textContent = data.stats.products;
+
+    // 2. User Directory Table
+    const usersList = document.getElementById('admin-users-list');
+    usersList.innerHTML = '';
+    
+    if (!data.users || data.users.length === 0) {
+      usersList.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px 0;">No registered users found.</td></tr>';
+    } else {
+      data.users.forEach(u => {
+        const tr = document.createElement('tr');
+        const roleLabel = u.role === 'admin' ? 'ADMIN' : 'CUSTOMER';
+        const roleBadgeClass = u.role === 'admin' ? 'status-preparing' : 'status-delivered';
+        
+        tr.innerHTML = `
+          <td>${u.user_id}</td>
+          <td><strong style="color: white;">${u.username}</strong></td>
+          <td>${u.email}</td>
+          <td><span class="status-badge ${roleBadgeClass}" style="font-size: 0.72rem;">${roleLabel}</span></td>
+        `;
+        usersList.appendChild(tr);
+      });
+    }
+
+    // 3. Platform Orders Table
+    const ordersList = document.getElementById('admin-orders-list');
+    ordersList.innerHTML = '';
+    
+    if (!data.orders || data.orders.length === 0) {
+      ordersList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px 0;">No platform orders placed yet.</td></tr>';
+    } else {
+      data.orders.forEach(o => {
+        const dateStr = new Date(o.created_at).toLocaleDateString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        const typeLabel = o.order_type === 'bean' ? 'WHOLESALE' : 'RETAIL';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>#${o.order_id}</td>
+          <td>
+            <strong>${o.user_name}</strong><br>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">${o.user_email}</span>
+          </td>
+          <td>
+            <span style="font-size: 0.88rem; color: var(--text-main); font-weight: 500;">${o.items_summary || 'No items detail'}</span><br>
+            <small style="color: var(--text-muted);">${dateStr}</small>
+          </td>
+          <td><span class="product-badge" style="position: static; font-size: 0.75rem; display: inline-block;">${typeLabel}</span></td>
+          <td style="font-weight: 700; color: var(--accent-gold); font-size: 1.05rem;">Rs. ${Number(o.total_price).toLocaleString()}</td>
+          <td><span class="status-badge status-${o.status}">${o.status.toUpperCase()}</span></td>
+        `;
+        ordersList.appendChild(tr);
+      });
+    }
+  } catch (error) {
+    showToast(`Failed to fetch admin dashboard records: ${error.message}`, 'error');
+  }
+}
+
+function toggleRoastInput(type) {
+  const group = document.getElementById('prod-roast-group');
+  if (type === 'bean') {
+    group.style.display = 'block';
+  } else {
+    group.style.display = 'none';
+    document.getElementById('prod-roast').value = 'N/A';
+  }
+}
+
+async function handleAddProductSubmit(event) {
+  event.preventDefault();
+
+  if (!state.token || !state.user || state.user.role !== 'admin') {
+    showToast('Forbidden: Admin access required', 'error');
+    return;
+  }
+
+  const name = document.getElementById('prod-name').value;
+  const type = document.getElementById('prod-type').value;
+  const category = document.getElementById('prod-category').value;
+  const price = parseFloat(document.getElementById('prod-price').value);
+  const origin = document.getElementById('prod-origin').value || null;
+  const roast_level = document.getElementById('prod-roast').value || 'N/A';
+  const rawImage = document.getElementById('prod-image').value;
+  const description = document.getElementById('prod-desc').value || null;
+
+  // Assign fallback non-copyright images from unsplash if left blank
+  let image_url = rawImage;
+  if (!image_url) {
+    image_url = type === 'bean'
+      ? 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80'
+      : 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&w=600&q=80';
+  }
+
+  try {
+    await apiRequest('/products', {
+      method: 'POST',
+      body: JSON.stringify({
+        name,
+        type,
+        category,
+        price,
+        origin,
+        roast_level: type === 'bean' ? roast_level : null,
+        image_url,
+        is_available: true
+      })
+    });
+
+    showToast('Coffee product added successfully to catalog!', 'success');
+    document.getElementById('admin-add-product-form').reset();
+    toggleRoastInput('drink'); // hide roast group again
+    
+    // Refresh public catalog & admin dashboard
+    fetchProducts();
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to add product: ${error.message}`, 'error');
+  }
+}
+
 
 // --- Cart Drawer toggler ---
 

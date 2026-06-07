@@ -28,7 +28,9 @@
           <li><a href="#" class="active" onclick="setView('home')">Home</a></li>
           <li><a href="#catalog" onclick="setView('home')">Catalog</a></li>
           <li><a href="#features" onclick="setView('home')">Features</a></li>
+          <li><a href="#contact" onclick="setView('home')">Contact</a></li>
           <li class="user-only" style="display: none;"><a href="#dashboard" onclick="setView('dashboard')">Dashboard</a></li>
+          <li class="admin-only" style="display: none;"><a href="#admin" onclick="setView('admin')">Admin Panel</a></li>
         </ul>
         <div class="nav-actions">
           <button class="cart-icon-btn" onclick="toggleCartDrawer(true)" title="Open Cart">
@@ -132,6 +134,59 @@
         </div>
       </section>
 
+      <!-- Contact Us Section -->
+      <section class="contact-section" id="contact">
+        <div class="section-header">
+          <h2>Get in Touch with BeanForge</h2>
+          <p>Have questions about retail menu items or wholesale procurement contracts? Reach out to us.</p>
+        </div>
+        <div class="contact-grid">
+          <!-- Contact Info Cards -->
+          <div class="contact-info-panel glass-panel">
+            <div class="contact-item-detail">
+              <i class="fa-solid fa-map-location-dot contact-detail-icon"></i>
+              <div>
+                <h4>Our Address</h4>
+                <p>Sohan Islamabad Express Highway, Islamabad</p>
+              </div>
+            </div>
+            
+            <div class="contact-item-detail">
+              <i class="fa-solid fa-phone-volume contact-detail-icon"></i>
+              <div>
+                <h4>Phone Number</h4>
+                <p>03096820353</p>
+              </div>
+            </div>
+            
+            <div class="contact-item-detail">
+              <i class="fa-solid fa-envelope-open-text contact-detail-icon"></i>
+              <div>
+                <h4>Email Address</h4>
+                <p><a href="mailto:tanveermuzammil03@gmail.com">tanveermuzammil03@gmail.com</a></p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Quick Message Box -->
+          <div class="contact-form-panel glass-panel">
+            <h3>Send a Quick Inquiry</h3>
+            <form onsubmit="event.preventDefault(); showToast('Inquiry sent successfully! We will get back to you shortly.', 'success'); this.reset();">
+              <div class="form-group">
+                <input type="text" class="form-input" placeholder="Your Name" required>
+              </div>
+              <div class="form-group">
+                <input type="email" class="form-input" placeholder="Your Email Address" required>
+              </div>
+              <div class="form-group">
+                <textarea class="form-input" placeholder="Your Message or Inquiry Details..." rows="4" style="resize: none;" required></textarea>
+              </div>
+              <button type="submit" class="submit-btn">Send Message</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
     </div> <!-- End Home View -->
 
     <!-- Dashboard View (Only visible to logged-in users) -->
@@ -161,6 +216,153 @@
         </div>
       </section>
     </div> <!-- End Dashboard View -->
+
+    <!-- Admin View (Only visible to admin users) -->
+    <div id="admin-view" style="display: none;">
+      <section class="admin-section" id="admin" style="display: block;">
+        <div class="section-header" style="margin-top: 80px;">
+          <h2 class="shiny-title">Admin Management Panel</h2>
+          <p>Oversee all users, manage product catalog, and monitor customer orders.</p>
+        </div>
+        
+        <!-- Admin Stats Panel -->
+        <div class="admin-stats-grid">
+          <div class="stat-card glass-panel">
+            <i class="fa-solid fa-users stat-icon"></i>
+            <div class="stat-info">
+              <span class="stat-label">Total Users</span>
+              <h3 id="admin-stat-users">0</h3>
+            </div>
+          </div>
+          <div class="stat-card glass-panel">
+            <i class="fa-solid fa-receipt stat-icon"></i>
+            <div class="stat-info">
+              <span class="stat-label">Platform Orders</span>
+              <h3 id="admin-stat-orders">0</h3>
+            </div>
+          </div>
+          <div class="stat-card glass-panel">
+            <i class="fa-solid fa-mug-hot stat-icon"></i>
+            <div class="stat-info">
+              <span class="stat-label">Active Products</span>
+              <h3 id="admin-stat-products">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-grid">
+          <!-- User Directory panel -->
+          <div class="admin-panel glass-panel">
+            <h3><i class="fa-solid fa-user-gear" style="color: var(--accent-gold); margin-right: 10px;"></i> User Directory & Registrations</h3>
+            <div class="admin-table-container">
+              <table class="admin-table" id="admin-users-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-list">
+                  <!-- Dynamic Users list injects here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <!-- Manual Add Product Form panel -->
+          <div class="admin-panel glass-panel">
+            <h3><i class="fa-solid fa-circle-plus" style="color: var(--accent-gold); margin-right: 10px;"></i> Manually Add Coffee/Product</h3>
+            <form id="admin-add-product-form" onsubmit="handleAddProductSubmit(event)">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="prod-name">Product Name</label>
+                  <input type="text" class="form-input" id="prod-name" required placeholder="e.g. Matcha Double Espresso">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="prod-type">Product Type</label>
+                  <select class="form-input" id="prod-type" required onchange="toggleRoastInput(this.value)">
+                    <option value="drink">Retail Menu Drink</option>
+                    <option value="bean">Wholesale Coffee Bean</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="prod-category">Category</label>
+                  <select class="form-input" id="prod-category" required>
+                    <option value="Espresso">Espresso</option>
+                    <option value="Latte">Latte</option>
+                    <option value="Cappuccino">Cappuccino</option>
+                    <option value="Cold Coffee">Cold Coffee</option>
+                    <option value="Matcha Latte">Matcha</option>
+                    <option value="Mocha">Mocha</option>
+                    <option value="Coffee Beans">Coffee Beans</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="prod-price">Price (PKR)</label>
+                  <input type="number" class="form-input" id="prod-price" required min="1" placeholder="e.g. 1100">
+                </div>
+              </div>
+              
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label class="form-label" for="prod-origin">Origin Country</label>
+                  <input type="text" class="form-input" id="prod-origin" placeholder="e.g. Kyoto, Japan">
+                </div>
+                <div class="form-group" id="prod-roast-group" style="display: none;">
+                  <label class="form-label" for="prod-roast">Roast Level</label>
+                  <select class="form-input" id="prod-roast">
+                    <option value="Light">Light</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Dark">Dark</option>
+                    <option value="N/A" selected>N/A</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label" for="prod-image">Image URL</label>
+                <input type="url" class="form-input" id="prod-image" placeholder="https://images.unsplash.com/... or leave blank for default">
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label" for="prod-desc">Description</label>
+                <textarea class="form-input" id="prod-desc" rows="3" style="resize: none;" placeholder="Provide brief coffee tasting notes, ingredients, or blend details..."></textarea>
+              </div>
+              
+              <button type="submit" class="submit-btn" style="margin-top: 5px;">Add Product to Catalog</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Global User Orders panel -->
+        <div class="admin-panel glass-panel" style="margin-top: 30px;">
+          <h3><i class="fa-solid fa-file-invoice" style="color: var(--accent-gold); margin-right: 10px;"></i> Platform Customer Orders</h3>
+          <div class="admin-table-container">
+            <table class="admin-table" id="admin-orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Order Details (Items)</th>
+                  <th>Type</th>
+                  <th>Total Price</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="admin-orders-list">
+                <!-- Dynamic Orders list injects here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+    </div> <!-- End Admin View -->
 
     <!-- Footer -->
     <footer>

@@ -1191,6 +1191,206 @@ footer p span {
   color: var(--accent-gold);
 }
 
+/* Contact Us Section styling */
+.contact-section {
+  padding: 80px 5%;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 40px;
+}
+
+.contact-info-panel {
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  justify-content: center;
+}
+
+.contact-item-detail {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.contact-detail-icon {
+  font-size: 2.2rem;
+  color: var(--accent-gold);
+  width: 50px;
+  text-align: center;
+}
+
+.contact-item-detail h4 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: white;
+}
+
+.contact-item-detail p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.contact-item-detail a {
+  color: var(--accent-gold);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.contact-item-detail a:hover {
+  color: var(--accent-gold-light);
+}
+
+.contact-form-panel {
+  padding: 40px;
+}
+
+.contact-form-panel h3 {
+  font-size: 1.4rem;
+  margin-bottom: 25px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 12px;
+}
+
+/* Admin Section styling */
+.admin-section {
+  padding: 80px 5%;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 25px 30px;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  color: var(--accent-gold);
+}
+
+.stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-info h3 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: white;
+  margin-top: 5px;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 30px;
+}
+
+.admin-panel {
+  padding: 30px;
+}
+
+.admin-panel h3 {
+  font-size: 1.3rem;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-table-container {
+  max-height: 450px;
+  overflow-y: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.admin-table th, .admin-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.admin-table th {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.admin-table tr:hover td {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.admin-table td {
+  color: var(--text-muted);
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+select.form-input option {
+  background: var(--bg-secondary);
+  color: white;
+}
+
 /* Responsive Grid Tweaks */
 @media (max-width: 1024px) {
   .hero-grid {
@@ -1222,6 +1422,15 @@ footer p span {
     grid-column: span 2;
   }
   .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -1261,5 +1470,9 @@ footer p span {
   .cart-drawer {
     width: 100%;
     right: -100%;
+  }
+  .form-row-2 {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 }
