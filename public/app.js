@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
       header.classList.remove('scrolled');
     }
   });
+
+  // 5. Initialize Router
+  handleRouting();
 });
 
 // --- API Request Helper (Includes Auth Token) ---
@@ -508,13 +511,22 @@ async function submitQuoteRequest(event) {
 
 // --- Auth Modal & Session Actions ---
 
-function openAuthModal(mode = 'login') {
+function openAuthModal(mode = 'login', triggerNavigate = true) {
   switchAuthTab(mode);
   document.getElementById('auth-modal').classList.add('open');
+  if (triggerNavigate) {
+    navigateTo(mode === 'login' ? '/login' : '/signup');
+  }
 }
 
-function closeAuthModal() {
+function closeAuthModal(triggerNavigate = true) {
   document.getElementById('auth-modal').classList.remove('open');
+  if (triggerNavigate) {
+    const path = window.location.pathname;
+    if (path === '/login' || path === '/signup') {
+      navigateTo('/home');
+    }
+  }
 }
 
 function switchAuthTab(mode) {
@@ -526,10 +538,16 @@ function switchAuthTab(mode) {
     loginForm.style.display = 'block';
     signupForm.style.display = 'none';
     title.textContent = 'Sign In to BeanForge';
+    if (window.location.pathname === '/signup') {
+      window.history.replaceState(null, '', '/login');
+    }
   } else {
     loginForm.style.display = 'none';
     signupForm.style.display = 'block';
     title.textContent = 'Create a BeanForge Account';
+    if (window.location.pathname === '/login') {
+      window.history.replaceState(null, '', '/signup');
+    }
   }
 }
 
@@ -625,7 +643,7 @@ function logoutUser() {
   const adminLinks = document.querySelectorAll('.admin-only');
   adminLinks.forEach(link => link.style.display = 'none');
 
-  setView('home');
+  navigateTo('/home');
   showToast('Logged out successfully', 'info');
   
   // Refresh standard catalog view
@@ -633,47 +651,131 @@ function logoutUser() {
   updateCartUI();
 }
 
-// --- View Panel Routing ---
+// --- Client-Side Router ---
 
-function setView(viewName) {
+const routes = {
+  '/': () => showRouteView('home'),
+  '/home': () => showRouteView('home'),
+  '/catalog': () => showRouteView('home', 'catalog'),
+  '/features': () => showRouteView('home', 'features'),
+  '/contact': () => showRouteView('home', 'contact'),
+  '/dashboard': () => showRouteView('dashboard'),
+  '/admin': () => showRouteView('admin'),
+  '/login': () => showRouteView('login'),
+  '/signup': () => showRouteView('signup')
+};
+
+// Navigate to a new path using History API
+function navigateTo(path) {
+  window.history.pushState(null, '', path);
+  handleRouting();
+}
+
+// Handle routing based on current window location
+function handleRouting() {
+  const path = window.location.pathname;
+  const routeAction = routes[path] || routes['/'];
+  routeAction();
+}
+
+// Global click event listener for client-side routing of internal links
+document.addEventListener('click', (e) => {
+  const anchor = e.target.closest('a');
+  if (anchor && anchor.href) {
+    const targetUrl = new URL(anchor.href, window.location.origin);
+    // Check if the link target is on our domain
+    if (targetUrl.origin === window.location.origin) {
+      const pathname = targetUrl.pathname;
+      // If the pathname matches a defined route, handle it client-side
+      if (routes[pathname]) {
+        e.preventDefault();
+        navigateTo(pathname);
+      }
+    }
+  }
+});
+
+// Sync routing when browser back/forward buttons are clicked
+window.addEventListener('popstate', handleRouting);
+
+// Show the selected view (equivalent to old setView, but with routing context)
+function showRouteView(viewName, sectionId = null) {
   const homeView = document.getElementById('home-view');
   const dashView = document.getElementById('dashboard-view');
   const adminView = document.getElementById('admin-view');
   
+  // Close the modal unless we are explicitly navigating to login/signup
+  if (viewName !== 'login' && viewName !== 'signup') {
+    closeAuthModal(false); // pass false to prevent routing feedback loop
+  }
+
+  // Reset navigation active state
   const navLinks = document.querySelectorAll('.nav-links a');
   navLinks.forEach(link => link.classList.remove('active'));
 
   if (viewName === 'admin') {
     if (!state.token || !state.user || state.user.role !== 'admin') {
       showToast('Forbidden: Admin access required', 'error');
-      setView('home');
+      navigateTo('/home');
       return;
     }
     homeView.style.display = 'none';
     dashView.style.display = 'none';
     adminView.style.display = 'block';
     
-    const navAdmin = document.querySelector('header a[href="#admin"]');
+    const navAdmin = document.querySelector('header a[href="/admin"]');
     if (navAdmin) navAdmin.classList.add('active');
     
     fetchAdminData();
   } else if (viewName === 'dashboard') {
+    if (!state.token) {
+      showToast('Please sign in to access your dashboard', 'warning');
+      navigateTo('/login');
+      return;
+    }
     homeView.style.display = 'none';
     dashView.style.display = 'block';
     adminView.style.display = 'none';
     
-    const navDash = document.querySelector('header a[href="#dashboard"]');
+    const navDash = document.querySelector('header a[href="/dashboard"]');
     if (navDash) navDash.classList.add('active');
     
     fetchDashboardData();
+  } else if (viewName === 'login' || viewName === 'signup') {
+    // Show auth modal, keep underlying view active
+    if (homeView.style.display === 'none' && dashView.style.display === 'none' && adminView.style.display === 'none') {
+      homeView.style.display = 'block';
+    }
+    openAuthModal(viewName === 'login' ? 'login' : 'signup', false);
   } else {
+    // Show home view
     homeView.style.display = 'block';
     dashView.style.display = 'none';
     adminView.style.display = 'none';
     
-    const navHome = document.querySelector('header a[href="#"]');
-    if (navHome) navHome.classList.add('active');
+    let activePath = '/home';
+    if (sectionId) {
+      activePath = `/${sectionId}`;
+    }
+    const navLink = document.querySelector(`header a[href="${activePath}"]`);
+    if (navLink) navLink.classList.add('active');
+    
+    if (sectionId) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
+}
+
+// Legacy setView compatibility wrapper
+function setView(viewName) {
+  navigateTo(`/${viewName}`);
 }
 
 // --- Admin Panel API Actions ---
