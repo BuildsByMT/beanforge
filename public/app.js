@@ -306,6 +306,11 @@ function renderOrders(orders) {
           Rs. ${Number(order.total_price).toLocaleString()}
         </div>
       </div>
+      <div class="dash-item-footer">
+        <button class="cancel-order-btn" onclick="handleCancelUserOrder(${order.order_id})">
+          <i class="fa-regular fa-trash-can"></i> Cancel Order
+        </button>
+      </div>
     `;
     container.appendChild(div);
   });
@@ -342,6 +347,11 @@ function renderQuotes(quotes) {
           <div style="font-size: 0.75rem; color: var(--text-muted);">Est. base price</div>
           <div style="font-weight: 700; color: var(--accent-gold); font-size: 1rem;">Rs. ${(Number(q.base_price) * q.quantity_lbs).toLocaleString()}</div>
         </div>
+      </div>
+      <div class="dash-item-footer">
+        <button class="delete-quote-btn" onclick="handleDeleteUserQuote(${q.quote_id})">
+          <i class="fa-regular fa-trash-can"></i> Delete Request
+        </button>
       </div>
     `;
     container.appendChild(div);
@@ -411,28 +421,58 @@ async function handleAddToCart(productId) {
 }
 
 async function handleUpdateCartQty(productId, newQty) {
+  const previousCart = [...state.cart];
+  
+  // Optimistic UI Update
+  if (newQty <= 0) {
+    state.cart = state.cart.filter(item => item.product_id !== productId);
+  } else {
+    state.cart = state.cart.map(item => {
+      if (item.product_id === productId) {
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    });
+  }
+  updateCartUI();
+
   try {
-    const result = await apiRequest('/cart', {
+    await apiRequest('/cart', {
       method: 'PUT',
       body: JSON.stringify({ product_id: productId, quantity: newQty })
     });
     
-    fetchUserCart();
+    // Refresh background data to ensure exact sync
+    const cartItems = await apiRequest('/cart');
+    state.cart = cartItems;
+    updateCartUI();
   } catch (error) {
-    showToast(`Error: ${error.message}`, 'error');
+    state.cart = previousCart;
+    updateCartUI();
+    showToast(`Failed to update quantity: ${error.message}`, 'error');
   }
 }
 
 async function handleRemoveCartItem(productId) {
+  const previousCart = [...state.cart];
+  
+  // Optimistic UI Update
+  state.cart = state.cart.filter(item => item.product_id !== productId);
+  updateCartUI();
+
   try {
-    const result = await apiRequest(`/cart?product_id=${productId}`, {
+    await apiRequest(`/cart?product_id=${productId}`, {
       method: 'DELETE'
     });
     
     showToast('Item removed from cart', 'info');
-    fetchUserCart();
+    const cartItems = await apiRequest('/cart');
+    state.cart = cartItems;
+    updateCartUI();
   } catch (error) {
-    showToast(`Error: ${error.message}`, 'error');
+    state.cart = previousCart;
+    updateCartUI();
+    showToast(`Failed to remove item: ${error.message}`, 'error');
   }
 }
 
@@ -704,6 +744,9 @@ function showRouteView(viewName, sectionId = null) {
   const dashView = document.getElementById('dashboard-view');
   const adminView = document.getElementById('admin-view');
   
+  // Close mobile navigation dropdown on view change
+  closeMobileMenu();
+
   // Close the modal unless we are explicitly navigating to login/signup
   if (viewName !== 'login' && viewName !== 'signup') {
     closeAuthModal(false); // pass false to prevent routing feedback loop
@@ -769,6 +812,8 @@ function showRouteView(viewName, sectionId = null) {
       }
     } else {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     }
   }
 }
@@ -818,7 +863,7 @@ async function fetchAdminData() {
     ordersList.innerHTML = '';
     
     if (!data.orders || data.orders.length === 0) {
-      ordersList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px 0;">No platform orders placed yet.</td></tr>';
+      ordersList.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px 0;">No platform orders placed yet.</td></tr>';
     } else {
       data.orders.forEach(o => {
         const dateStr = new Date(o.created_at).toLocaleDateString(undefined, {
@@ -829,6 +874,29 @@ async function fetchAdminData() {
         });
         
         const typeLabel = o.order_type === 'bean' ? 'WHOLESALE' : 'RETAIL';
+        
+        const statusSelect = `
+          <select class="admin-status-select" onchange="handleAdminUpdateStatus(${o.order_id}, this.value)">
+            <option value="pending" ${o.status === 'pending' ? 'selected' : ''}>PENDING</option>
+            <option value="preparing" ${o.status === 'preparing' ? 'selected' : ''}>PREPARING</option>
+            <option value="delivered" ${o.status === 'delivered' ? 'selected' : ''}>DELIVERED</option>
+            <option value="approved" ${o.status === 'approved' ? 'selected' : ''}>APPROVED</option>
+            <option value="completed" ${o.status === 'completed' ? 'selected' : ''}>COMPLETED</option>
+            <option value="cancelled" ${o.status === 'cancelled' ? 'selected' : ''}>CANCELLED</option>
+          </select>
+        `;
+        
+        const actionsHTML = `
+          <div style="white-space: nowrap;">
+            <button class="admin-action-btn edit-btn" onclick="openAdminEditOrderModal(${o.order_id}, '${o.order_type}', ${o.total_price}, '${o.status}')" title="Edit Order Details">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button class="admin-action-btn delete-btn" onclick="openAdminDeleteOrderModal(${o.order_id})" title="Delete Order">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>#${o.order_id}</td>
@@ -842,7 +910,8 @@ async function fetchAdminData() {
           </td>
           <td><span class="product-badge" style="position: static; font-size: 0.75rem; display: inline-block;">${typeLabel}</span></td>
           <td style="font-weight: 700; color: var(--accent-gold); font-size: 1.05rem;">Rs. ${Number(o.total_price).toLocaleString()}</td>
-          <td><span class="status-badge status-${o.status}">${o.status.toUpperCase()}</span></td>
+          <td>${statusSelect}</td>
+          <td>${actionsHTML}</td>
         `;
         ordersList.appendChild(tr);
       });
@@ -965,4 +1034,133 @@ function showToast(message, type = 'info') {
       }
     }, 300);
   }, 3000);
+}
+
+// --- Mobile Navigation Menu Toggle ---
+function toggleMobileMenu() {
+  const navLinks = document.querySelector('.nav-links');
+  const toggleBtn = document.getElementById('mobile-nav-toggle');
+  if (navLinks) {
+    navLinks.classList.toggle('open');
+    const isOpen = navLinks.classList.contains('open');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = isOpen ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars"></i>';
+    }
+  }
+}
+
+function closeMobileMenu() {
+  const navLinks = document.querySelector('.nav-links');
+  const toggleBtn = document.getElementById('mobile-nav-toggle');
+  if (navLinks && navLinks.classList.contains('open')) {
+    navLinks.classList.remove('open');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = '<i class="fa-solid fa-bars"></i>';
+    }
+  }
+}
+
+// --- Customer Order & Quote Dashboard Deletion handlers ---
+async function handleCancelUserOrder(orderId) {
+  if (!confirm(`Are you sure you want to cancel and delete order #${orderId}?`)) return;
+  try {
+    await apiRequest(`/orders?order_id=${orderId}`, {
+      method: 'DELETE'
+    });
+    showToast(`Order #${orderId} has been successfully cancelled and deleted.`, 'success');
+    fetchDashboardData();
+  } catch (error) {
+    showToast(`Failed to cancel order: ${error.message}`, 'error');
+  }
+}
+
+async function handleDeleteUserQuote(quoteId) {
+  if (!confirm(`Are you sure you want to permanently delete wholesale quote request #${quoteId}?`)) return;
+  try {
+    await apiRequest(`/quotes?quote_id=${quoteId}`, {
+      method: 'DELETE'
+    });
+    showToast(`Quote request #${quoteId} has been successfully deleted.`, 'success');
+    fetchDashboardData();
+  } catch (error) {
+    showToast(`Failed to delete quote: ${error.message}`, 'error');
+  }
+}
+
+// --- Admin Order CRUD operations controllers ---
+async function handleAdminUpdateStatus(orderId, newStatus) {
+  try {
+    await apiRequest('/admin', {
+      method: 'PUT',
+      body: JSON.stringify({ order_id: orderId, status: newStatus })
+    });
+    showToast(`Order #${orderId} status updated to ${newStatus.toUpperCase()}`, 'success');
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to update order status: ${error.message}`, 'error');
+  }
+}
+
+function openAdminEditOrderModal(orderId, orderType, totalPrice, status) {
+  document.getElementById('edit-order-id').value = orderId;
+  document.getElementById('edit-order-id-display').value = `#${orderId}`;
+  document.getElementById('edit-order-type').value = orderType;
+  document.getElementById('edit-order-price').value = totalPrice;
+  document.getElementById('edit-order-status').value = status;
+  
+  document.getElementById('admin-edit-order-modal').classList.add('open');
+}
+
+function closeAdminEditOrderModal() {
+  document.getElementById('admin-edit-order-modal').classList.remove('open');
+}
+
+async function handleAdminEditOrderSubmit(event) {
+  event.preventDefault();
+  const orderId = parseInt(document.getElementById('edit-order-id').value, 10);
+  const orderType = document.getElementById('edit-order-type').value;
+  const totalPrice = parseFloat(document.getElementById('edit-order-price').value);
+  const status = document.getElementById('edit-order-status').value;
+
+  try {
+    await apiRequest('/admin', {
+      method: 'PUT',
+      body: JSON.stringify({
+        order_id: orderId,
+        order_type: orderType,
+        total_price: totalPrice,
+        status: status
+      })
+    });
+    showToast(`Order #${orderId} details updated successfully`, 'success');
+    closeAdminEditOrderModal();
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to edit order details: ${error.message}`, 'error');
+  }
+}
+
+function openAdminDeleteOrderModal(orderId) {
+  document.getElementById('delete-order-id-display').textContent = `#${orderId}`;
+  const confirmBtn = document.getElementById('confirm-delete-order-btn');
+  confirmBtn.onclick = () => handleAdminDeleteOrder(orderId);
+  
+  document.getElementById('admin-delete-order-modal').classList.add('open');
+}
+
+function closeAdminDeleteOrderModal() {
+  document.getElementById('admin-delete-order-modal').classList.remove('open');
+}
+
+async function handleAdminDeleteOrder(orderId) {
+  try {
+    await apiRequest(`/admin?order_id=${orderId}`, {
+      method: 'DELETE'
+    });
+    showToast(`Order #${orderId} deleted successfully from database`, 'success');
+    closeAdminDeleteOrderModal();
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to delete order: ${error.message}`, 'error');
+  }
 }

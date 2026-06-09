@@ -115,7 +115,7 @@ module.exports = async function handler(req, res) {
       // Clear Cart
       await query('DELETE FROM cart WHERE user_id = ?', [userId]);
 
-      return res.status(251).json({ // Using standard 201 Created
+      return res.status(201).json({ // Using standard 201 Created (was 251 in original)
         success: true,
         message: 'Order placed successfully',
         order_id: orderId,
@@ -124,7 +124,28 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    res.setHeader('Allow', ['GET', 'POST']);
+    // 3. DELETE: Cancel/delete user's own order
+    if (req.method === 'DELETE') {
+      const orderId = req.query.order_id ? parseInt(req.query.order_id, 10) : null;
+      if (!orderId) {
+        return res.status(400).json({ success: false, message: 'Order ID is required' });
+      }
+
+      // Check order ownership
+      const checkOrder = await query('SELECT user_id FROM orders WHERE order_id = ?', [orderId]);
+      if (checkOrder.length === 0) {
+        return res.status(404).json({ success: false, message: 'Order not found' });
+      }
+
+      if (checkOrder[0].user_id !== userId) {
+        return res.status(403).json({ success: false, message: 'Forbidden: You do not own this order' });
+      }
+
+      await query('DELETE FROM orders WHERE order_id = ? AND user_id = ?', [orderId, userId]);
+      return res.status(200).json({ success: true, message: 'Order cancelled and deleted successfully' });
+    }
+
+    res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
     return res.status(405).json({ success: false, message: `Method ${req.method} Not Allowed` });
   } catch (error) {
     console.error('Orders API error:', error);

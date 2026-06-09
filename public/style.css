@@ -21,6 +21,9 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
   scroll-behavior: smooth;
 }
 
@@ -64,6 +67,7 @@ body {
   z-index: 0;
   pointer-events: none;
   background-color: var(--bg-primary);
+  overflow: hidden; /* Prevent child aurora blobs from bleeding and stretching the page */
 }
 
 .aurora-bg::before {
@@ -1451,7 +1455,27 @@ select.form-input option {
     padding: 15px 20px;
   }
   .nav-links {
-    display: none; /* Can build toggle hamburger menu */
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: rgba(10, 8, 8, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 20px 0;
+    gap: 15px;
+    z-index: 99;
+    text-align: center;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+  }
+  .nav-links.open {
+    display: flex;
+  }
+  .mobile-nav-toggle {
+    display: flex;
   }
   .hero-content h1 {
     font-size: 2.6rem;
@@ -1475,4 +1499,114 @@ select.form-input option {
     grid-template-columns: 1fr;
     gap: 10px;
   }
+}
+
+/* Mobile Nav Toggle Button styling (desktop hidden) */
+.mobile-nav-toggle {
+  display: none;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  font-size: 1.2rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.mobile-nav-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent-gold);
+}
+
+/* Additional Status Badges styling */
+.status-approved { background: rgba(40, 167, 69, 0.1); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.2); }
+.status-completed { background: rgba(40, 167, 69, 0.1); color: #28a745; border: 1px solid rgba(40, 167, 69, 0.2); }
+
+/* Dashboard Card Actions styling */
+.dash-item-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  padding-top: 10px;
+}
+
+.cancel-order-btn, .delete-quote-btn {
+  background: rgba(220, 53, 69, 0.08);
+  color: #ff4d4d;
+  border: 1px solid rgba(220, 53, 69, 0.15);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease;
+}
+
+.cancel-order-btn:hover, .delete-quote-btn:hover {
+  background: rgba(220, 53, 69, 0.2);
+  border-color: #ff4d4d;
+  transform: translateY(-1px);
+}
+
+/* Admin Status Dropdown Select styling */
+.admin-status-select {
+  padding: 4px 24px 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(18, 15, 15, 0.9);
+  color: var(--accent-gold-light);
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg fill='rgb(205,170,125)' height='16' viewBox='0 0 24 24' width='16' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  transition: all 0.3s ease;
+}
+
+.admin-status-select:hover {
+  border-color: var(--accent-gold);
+}
+
+.admin-status-select option {
+  background: var(--bg-secondary);
+  color: white;
+}
+
+/* Admin Actions Buttons styling */
+.admin-action-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  margin-right: 5px;
+}
+
+.admin-action-btn.edit-btn:hover {
+  background: rgba(205, 170, 125, 0.15);
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+
+.admin-action-btn.delete-btn:hover {
+  background: rgba(220, 53, 69, 0.15);
+  color: #ff4d4d;
+  border-color: #ff4d4d;
 }

@@ -70,7 +70,28 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    res.setHeader('Allow', ['GET', 'POST']);
+    // 3. DELETE: Cancel/delete user's own quote request
+    if (req.method === 'DELETE') {
+      const quoteId = req.query.quote_id ? parseInt(req.query.quote_id, 10) : null;
+      if (!quoteId) {
+        return res.status(400).json({ success: false, message: 'Quote ID is required' });
+      }
+
+      // Check ownership
+      const checkQuote = await query('SELECT user_id FROM quotes WHERE quote_id = ?', [quoteId]);
+      if (checkQuote.length === 0) {
+        return res.status(404).json({ success: false, message: 'Quote not found' });
+      }
+
+      if (checkQuote[0].user_id !== userId) {
+        return res.status(403).json({ success: false, message: 'Forbidden: You do not own this quote request' });
+      }
+
+      await query('DELETE FROM quotes WHERE quote_id = ? AND user_id = ?', [quoteId, userId]);
+      return res.status(200).json({ success: true, message: 'Quote request cancelled and deleted successfully' });
+    }
+
+    res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
     return res.status(405).json({ success: false, message: `Method ${req.method} Not Allowed` });
   } catch (error) {
     console.error('Quotes API error:', error);
