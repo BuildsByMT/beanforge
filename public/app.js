@@ -660,9 +660,11 @@ function updateNavForLoggedInUser() {
 }
 
 function handleLogoutToggle() {
-  if (confirm('Are you sure you want to sign out?')) {
-    logoutUser();
-  }
+  showCustomConfirm(
+    'Sign Out',
+    'Are you sure you want to sign out of your BeanForge account?',
+    () => { logoutUser(); }
+  );
 }
 
 function logoutUser() {
@@ -1063,29 +1065,41 @@ function closeMobileMenu() {
 
 // --- Customer Order & Quote Dashboard Deletion handlers ---
 async function handleCancelUserOrder(orderId) {
-  if (!confirm(`Are you sure you want to cancel and delete order #${orderId}?`)) return;
-  try {
-    await apiRequest(`/orders?order_id=${orderId}`, {
-      method: 'DELETE'
-    });
-    showToast(`Order #${orderId} has been successfully cancelled and deleted.`, 'success');
-    fetchDashboardData();
-  } catch (error) {
-    showToast(`Failed to cancel order: ${error.message}`, 'error');
-  }
+  showCustomConfirm(
+    'Cancel Order',
+    `Are you sure you want to cancel and delete order #${orderId}?`,
+    async () => {
+      try {
+        await apiRequest(`/orders?order_id=${orderId}`, {
+          method: 'DELETE'
+        });
+        showToast(`Order #${orderId} has been successfully cancelled and deleted.`, 'success');
+        fetchDashboardData();
+      } catch (error) {
+        showToast(`Failed to cancel order: ${error.message}`, 'error');
+      }
+    },
+    true
+  );
 }
 
 async function handleDeleteUserQuote(quoteId) {
-  if (!confirm(`Are you sure you want to permanently delete wholesale quote request #${quoteId}?`)) return;
-  try {
-    await apiRequest(`/quotes?quote_id=${quoteId}`, {
-      method: 'DELETE'
-    });
-    showToast(`Quote request #${quoteId} has been successfully deleted.`, 'success');
-    fetchDashboardData();
-  } catch (error) {
-    showToast(`Failed to delete quote: ${error.message}`, 'error');
-  }
+  showCustomConfirm(
+    'Delete Quote Request',
+    `Are you sure you want to permanently delete wholesale quote request #${quoteId}?`,
+    async () => {
+      try {
+        await apiRequest(`/quotes?quote_id=${quoteId}`, {
+          method: 'DELETE'
+        });
+        showToast(`Quote request #${quoteId} has been successfully deleted.`, 'success');
+        fetchDashboardData();
+      } catch (error) {
+        showToast(`Failed to delete quote: ${error.message}`, 'error');
+      }
+    },
+    true
+  );
 }
 
 // --- Admin Order CRUD operations controllers ---
@@ -1203,3 +1217,56 @@ function handleScrollSpy() {
     }
   });
 }
+
+// --- Custom Confirmation Modal Controllers ---
+let confirmCallback = null;
+
+function showCustomConfirm(title, message, onConfirm, isWarning = false) {
+  const modal = document.getElementById('custom-confirm-modal');
+  const modalTitle = document.getElementById('confirm-modal-title');
+  const modalMsg = document.getElementById('confirm-modal-message');
+  const icon = document.getElementById('confirm-modal-icon');
+  const okBtn = document.getElementById('confirm-modal-ok-btn');
+
+  if (!modal || !modalTitle || !modalMsg || !icon || !okBtn) return;
+
+  modalTitle.textContent = title;
+  modalMsg.textContent = message;
+
+  if (isWarning) {
+    icon.className = 'fa-solid fa-triangle-exclamation';
+    icon.style.color = '#ff4d4d';
+    okBtn.style.background = '#dc3545';
+    okBtn.style.borderColor = '#dc3545';
+  } else {
+    icon.className = 'fa-solid fa-circle-question';
+    icon.style.color = 'var(--accent-gold)';
+    okBtn.style.background = 'var(--accent-gold-dark)';
+    okBtn.style.borderColor = 'var(--accent-gold-dark)';
+  }
+
+  confirmCallback = onConfirm;
+  modal.classList.add('open');
+}
+
+function closeCustomConfirm(confirmed = false) {
+  const modal = document.getElementById('custom-confirm-modal');
+  if (modal) {
+    modal.classList.remove('open');
+  }
+  
+  if (confirmed && typeof confirmCallback === 'function') {
+    confirmCallback();
+  }
+  confirmCallback = null;
+}
+
+// Add standard confirm event listener once DOM loaded
+document.addEventListener('DOMContentLoaded', () => {
+  const okBtn = document.getElementById('confirm-modal-ok-btn');
+  if (okBtn) {
+    okBtn.addEventListener('click', () => {
+      closeCustomConfirm(true);
+    });
+  }
+});
