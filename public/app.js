@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchDashboardData();
   }
 
-  // 4. Setup Scroll Event for Header
+  // 4. Setup Scroll Event for Header & Scroll Spy
   window.addEventListener('scroll', () => {
     const header = document.getElementById('main-header');
     if (window.scrollY > 50) {
@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       header.classList.remove('scrolled');
     }
+    handleScrollSpy();
   });
 
   // 5. Initialize Router
@@ -1163,4 +1164,42 @@ async function handleAdminDeleteOrder(orderId) {
   } catch (error) {
     showToast(`Failed to delete order: ${error.message}`, 'error');
   }
+}
+
+// --- Scroll Spy dynamic navigation highlighter ---
+function handleScrollSpy() {
+  const homeView = document.getElementById('home-view');
+  if (!homeView || homeView.style.display === 'none') return;
+
+  const sections = [
+    { id: 'home', element: document.querySelector('.hero') },
+    { id: 'features', element: document.getElementById('features') },
+    { id: 'catalog', element: document.getElementById('catalog') },
+    { id: 'contact', element: document.getElementById('contact') }
+  ];
+
+  const scrollPosition = window.scrollY + 160; // offset for the fixed main header height
+
+  let activeSectionId = 'home';
+  for (const section of sections) {
+    if (section.element) {
+      const top = section.element.offsetTop;
+      const height = section.element.offsetHeight;
+      if (scrollPosition >= top && scrollPosition < top + height) {
+        activeSectionId = section.id;
+      }
+    }
+  }
+
+  // Update navbar links active styling
+  const navLinks = document.querySelectorAll('.nav-links a');
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    const href = link.getAttribute('href');
+    if (href === '/home' && activeSectionId === 'home') {
+      link.classList.add('active');
+    } else if (href === `/${activeSectionId}`) {
+      link.classList.add('active');
+    }
+  });
 }
