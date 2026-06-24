@@ -11,7 +11,34 @@ module.exports = async function handler(req, res) {
   }
 
   const { action } = req.query;
-  const { username, email, password, role } = req.body;
+  const { username, email, password } = req.body; // Secure: Destructure only username, email, and password. Avoid 'role' injection.
+
+  // 1. Password Length Check (Mitigates Long Password DoS on bcrypt)
+  if (password) {
+    if (password.length > 128) {
+      return res.status(400).json({ success: false, message: 'Password is too long (maximum 128 characters).' });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+    }
+  }
+
+  // 2. Email Validation (Mitigates ReDoS and enforces limits)
+  if (email) {
+    if (email.length > 150) {
+      return res.status(400).json({ success: false, message: 'Email address exceeds maximum length.' });
+    }
+    // Catastrophic backtracking safe email regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ success: false, message: 'Invalid email address format.' });
+    }
+  }
+
+  // 3. Username Length Validation
+  if (username && username.length > 50) {
+    return res.status(400).json({ success: false, message: 'Username is too long (maximum 50 characters).' });
+  }
 
   try {
     if (action === 'register') {
@@ -29,8 +56,8 @@ module.exports = async function handler(req, res) {
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
 
-      // Insert user (default role is 'customer')
-      const userRole = role === 'admin' ? 'admin' : 'customer';
+      // Insert user (default role is strictly 'customer' to prevent privilege escalation)
+      const userRole = 'customer';
       const result = await query(
         'INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)',
         [username, email, passwordHash, userRole]

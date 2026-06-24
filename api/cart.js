@@ -4,19 +4,10 @@ const { verifyToken } = require('./authHelper');
 module.exports = async function handler(req, res) {
   try {
     const user = verifyToken(req);
-    let userId = user ? user.userId : null;
-
-    // Fallback for user_id based on method
-    if (!userId) {
-      if (req.method === 'GET' || req.method === 'DELETE') {
-        userId = req.query.user_id ? parseInt(req.query.user_id, 10) : null;
-      } else {
-        userId = req.body.user_id ? parseInt(req.body.user_id, 10) : null;
-      }
-    }
+    const userId = user ? user.userId : null;
 
     if (!userId) {
-      return res.status(400).json({ success: false, message: 'Authentication required or user_id must be provided' });
+      return res.status(401).json({ success: false, message: 'Authentication required. Please sign in.' });
     }
 
     // 1. GET: Retrieve cart items joined with product metadata

@@ -1,5 +1,43 @@
 // app.js - Client-Side Controller for BeanForge
 
+// --- Security Utility Helpers (XSS/SSTI & Pastejacking protections) ---
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('Copied to clipboard!', 'success'))
+      .catch(err => {
+        console.error('Failed to copy text: ', err);
+        showToast('Failed to copy to clipboard', 'error');
+      });
+  } else {
+    // Fallback for older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      showToast('Copied to clipboard!', 'success');
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      showToast('Failed to copy to clipboard', 'error');
+    }
+    document.body.removeChild(textarea);
+  }
+}
+
 // --- Global Application State ---
 let state = {
   user: null,
@@ -184,7 +222,7 @@ function renderCatalog() {
 
     card.innerHTML = `
       <div class="product-image-container">
-        <img class="product-img" src="${p.image_url}" alt="${p.name}" loading="lazy">
+        <img class="product-img" src="${escapeHTML(p.image_url)}" alt="${escapeHTML(p.name)}" loading="lazy">
         <span class="product-badge">${p.type === 'bean' ? 'Wholesale Bean' : 'Retail Menu'}</span>
         <button class="like-btn ${isLiked ? 'liked' : ''}" onclick="handleToggleLike(${p.product_id})" id="like-btn-${p.product_id}">
           <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
@@ -192,11 +230,11 @@ function renderCatalog() {
       </div>
       <div class="product-body">
         <div class="product-meta">
-          <span>${p.category}</span>
-          <span>${p.origin ? `<i class="fa-solid fa-location-dot"></i> ${p.origin}` : ''}</span>
+          <span>${escapeHTML(p.category)}</span>
+          <span>${p.origin ? `<i class="fa-solid fa-location-dot"></i> ${escapeHTML(p.origin)}` : ''}</span>
         </div>
-        <h3 class="product-title">${p.name}</h3>
-        <p class="product-desc" title="${p.description}">${p.description || 'No description available.'}</p>
+        <h3 class="product-title">${escapeHTML(p.name)}</h3>
+        <p class="product-desc" title="${escapeHTML(p.description)}">${escapeHTML(p.description) || 'No description available.'}</p>
         <div class="product-footer">
           <div class="product-price">
             Rs. ${Number(p.price).toLocaleString()}
@@ -253,9 +291,9 @@ function updateCartUI() {
     const div = document.createElement('div');
     div.className = 'cart-item';
     div.innerHTML = `
-      <img src="${item.image_url}" alt="${item.name}" class="cart-item-img">
+      <img src="${escapeHTML(item.image_url)}" alt="${escapeHTML(item.name)}" class="cart-item-img">
       <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-name">${escapeHTML(item.name)}</div>
         <div class="cart-item-price">Rs. ${Number(item.price).toLocaleString()} x ${item.quantity}</div>
         <div class="cart-item-qty-actions">
           <button class="qty-btn" onclick="handleUpdateCartQty(${item.product_id}, ${item.quantity - 1})">-</button>
@@ -289,7 +327,7 @@ function renderOrders(orders) {
       minute: '2-digit'
     });
 
-    const itemsList = order.items.map(item => `${item.product_name} (x${item.quantity})`).join(', ');
+    const itemsList = order.items.map(item => `${escapeHTML(item.product_name)} (x${item.quantity})`).join(', ');
 
     const div = document.createElement('div');
     div.className = 'dash-item';
@@ -340,9 +378,9 @@ function renderQuotes(quotes) {
       </div>
       <div class="dash-item-body">
         <div>
-          <div style="font-weight: 600; font-size: 1rem; margin-bottom: 4px;">${q.product_name}</div>
+          <div style="font-weight: 600; font-size: 1rem; margin-bottom: 4px;">${escapeHTML(q.product_name)}</div>
           <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">Requested Volume: <strong style="color: white;">${q.quantity_lbs} lbs</strong></div>
-          ${q.notes ? `<div style="font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 2px solid var(--accent-gold-dark); padding-left: 8px;">"${q.notes}"</div>` : ''}
+          ${q.notes ? `<div style="font-size: 0.8rem; font-style: italic; color: var(--text-muted); border-left: 2px solid var(--accent-gold-dark); padding-left: 8px;">"${escapeHTML(q.notes)}"</div>` : ''}
         </div>
         <div style="text-align: right;">
           <div style="font-size: 0.75rem; color: var(--text-muted);">Est. base price</div>
@@ -853,8 +891,8 @@ async function fetchAdminData() {
         
         tr.innerHTML = `
           <td>${u.user_id}</td>
-          <td><strong style="color: white;">${u.username}</strong></td>
-          <td>${u.email}</td>
+          <td><strong style="color: white;">${escapeHTML(u.username)}</strong></td>
+          <td>${escapeHTML(u.email)}</td>
           <td><span class="status-badge ${roleBadgeClass}" style="font-size: 0.72rem;">${roleLabel}</span></td>
         `;
         usersList.appendChild(tr);
@@ -904,11 +942,11 @@ async function fetchAdminData() {
         tr.innerHTML = `
           <td>#${o.order_id}</td>
           <td>
-            <strong>${o.user_name}</strong><br>
-            <span style="font-size: 0.78rem; color: var(--text-muted);">${o.user_email}</span>
+            <strong>${escapeHTML(o.user_name)}</strong><br>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">${escapeHTML(o.user_email)}</span>
           </td>
           <td>
-            <span style="font-size: 0.88rem; color: var(--text-main); font-weight: 500;">${o.items_summary || 'No items detail'}</span><br>
+            <span style="font-size: 0.88rem; color: var(--text-main); font-weight: 500;">${escapeHTML(o.items_summary) || 'No items detail'}</span><br>
             <small style="color: var(--text-muted);">${dateStr}</small>
           </td>
           <td><span class="product-badge" style="position: static; font-size: 0.75rem; display: inline-block;">${typeLabel}</span></td>
@@ -1021,10 +1059,10 @@ function showToast(message, type = 'info') {
     toast.style.borderColor = '#dc3545';
   }
 
-  toast.innerHTML = `
-    <i class="fa-solid ${icon}"></i>
-    <span>${message}</span>
-  `;
+  toast.innerHTML = `<i class="fa-solid ${icon}"></i>`;
+  const toastText = document.createElement('span');
+  toastText.textContent = message;
+  toast.appendChild(toastText);
 
   container.appendChild(toast);
 

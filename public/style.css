@@ -1395,110 +1395,27 @@ select.form-input option {
   color: white;
 }
 
-/* Responsive Grid Tweaks */
-@media (max-width: 1024px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-  .hero-content p {
-    margin-left: auto;
-    margin-right: auto;
-  }
-  .hero-actions {
-    justify-content: center;
-  }
-  .hero-image-container {
-    height: 380px;
-    margin-top: 20px;
-  }
-  .hero-coffee-img {
-    max-height: 340px;
-  }
-  .hero-glow-halo {
-    width: 300px;
-    height: 300px;
-  }
-  .bento-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .bento-card-large {
-    grid-column: span 2;
-  }
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-  .contact-grid {
-    grid-template-columns: 1fr;
-  }
-  .admin-stats-grid {
-    grid-template-columns: 1fr;
-  }
-  .admin-grid {
-    grid-template-columns: 1fr;
-  }
+/* Inline secure text-copying buttons styling */
+.copy-btn-inline {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--accent-gold);
+  cursor: pointer;
+  margin-left: 8px;
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
 }
 
-@media (max-width: 768px) {
-  .bento-grid {
-    grid-template-columns: 1fr;
-  }
-  .bento-card-large {
-    grid-column: span 1;
-  }
-  .products-grid {
-    grid-template-columns: 1fr;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-  header {
-    padding: 15px 20px;
-  }
-  .nav-links {
-    display: none;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background: rgba(10, 8, 8, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border-color);
-    padding: 20px 0;
-    gap: 15px;
-    z-index: 99;
-    text-align: center;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-  }
-  .nav-links.open {
-    display: flex;
-  }
-  .mobile-nav-toggle {
-    display: flex;
-  }
-  .hero-content h1 {
-    font-size: 2.6rem;
-  }
-  .hero-image-container {
-    height: 300px;
-    margin-top: 15px;
-  }
-  .hero-coffee-img {
-    max-height: 270px;
-  }
-  .hero-glow-halo {
-    width: 240px;
-    height: 240px;
-  }
-  .cart-drawer {
-    width: 100%;
-    right: -100%;
-  }
-  .form-row-2 {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
+.copy-btn-inline:hover {
+  color: var(--accent-gold-light);
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
 }
 
 /* Mobile Nav Toggle Button styling (desktop hidden) */
@@ -1609,4 +1526,450 @@ select.form-input option {
   background: rgba(220, 53, 69, 0.15);
   color: #ff4d4d;
   border-color: #ff4d4d;
+}
+
+/* ==========================================================================
+   Comprehensive Responsiveness Framework: Optimizations for 20+ Screen Breakpoints
+   ========================================================================== */
+
+/* 1. Smartwatches / Wearables (under 320px) */
+@media (max-width: 320px) {
+  header {
+    padding: 10px 10px;
+  }
+  .nav-links {
+    gap: 8px;
+  }
+  .logo {
+    font-size: 1.1rem;
+  }
+  .cart-icon-btn {
+    font-size: 1rem;
+    padding: 4px;
+  }
+  .auth-btn {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+  }
+  .hero-content h1 {
+    font-size: 1.8rem;
+  }
+  .hero-content p {
+    font-size: 0.8rem;
+    padding: 0 5px;
+  }
+  .hero-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .hero-actions a {
+    padding: 10px 15px;
+    font-size: 0.85rem;
+  }
+  .hero-image-container {
+    height: 180px;
+  }
+  .hero-coffee-img {
+    max-height: 150px;
+  }
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .bento-card {
+    padding: 15px;
+  }
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+  .product-card {
+    border-radius: 8px;
+  }
+  .product-image-container {
+    height: 140px;
+  }
+  .product-body {
+    padding: 10px;
+  }
+  .product-desc {
+    display: none; /* Hide description on tiny watch screens */
+  }
+  .product-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .add-to-cart-container {
+    width: 100%;
+  }
+  .add-cart-btn {
+    width: 100%;
+    padding: 8px 5px;
+  }
+  .qty-select {
+    padding: 6px 4px;
+  }
+  .contact-grid, .dashboard-grid, .admin-stats-grid, .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .contact-form-panel form input,
+  .contact-form-panel form textarea {
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+  .admin-table th, .admin-table td {
+    padding: 6px;
+    font-size: 0.75rem;
+  }
+  .admin-panel {
+    padding: 10px;
+  }
+}
+
+/* 2. Compact Mobiles (320px - 360px) */
+@media (min-width: 321px) and (max-width: 360px) {
+  .logo {
+    font-size: 1.3rem;
+  }
+  .hero-content h1 {
+    font-size: 2.1rem;
+  }
+  .hero-content p {
+    font-size: 0.9rem;
+  }
+  .hero-image-container {
+    height: 220px;
+  }
+  .hero-coffee-img {
+    max-height: 190px;
+  }
+  .bento-grid, .products-grid, .contact-grid, .dashboard-grid, .admin-stats-grid, .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .bento-card {
+    padding: 20px;
+  }
+}
+
+/* 3. Standard Mobiles (360px - 400px) */
+@media (min-width: 361px) and (max-width: 400px) {
+  .hero-content h1 {
+    font-size: 2.3rem;
+  }
+  .hero-image-container {
+    height: 240px;
+  }
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 4. Large Mobiles (400px - 480px) */
+@media (min-width: 401px) and (max-width: 480px) {
+  .hero-content h1 {
+    font-size: 2.5rem;
+  }
+  .hero-image-container {
+    height: 260px;
+  }
+  .products-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 5. Small Tablets & Portrait Foldables (480px - 600px) */
+@media (min-width: 481px) and (max-width: 600px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-actions {
+    justify-content: center;
+  }
+  .bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  .contact-grid, .dashboard-grid, .admin-stats-grid, .admin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 6. Standard Tablets Portrait (600px - 768px) */
+@media (min-width: 601px) and (max-width: 768px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-actions {
+    justify-content: center;
+  }
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .bento-card-large {
+    grid-column: span 2;
+  }
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+  .contact-grid, .dashboard-grid, .admin-stats-grid, .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  header {
+    padding: 15px 3%;
+  }
+  .nav-links {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: rgba(10, 8, 8, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 20px 0;
+    gap: 15px;
+    z-index: 99;
+    text-align: center;
+  }
+  .nav-links.open {
+    display: flex;
+  }
+  .mobile-nav-toggle {
+    display: flex;
+  }
+  .cart-drawer {
+    width: 100%;
+    right: -100%;
+  }
+}
+
+/* 7. Large Tablets Portrait / Small Landscape (768px - 834px) */
+@media (min-width: 769px) and (max-width: 834px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+  .hero-actions {
+    justify-content: center;
+  }
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+  .dashboard-grid, .contact-grid, .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* 8. Extra-Large Tablets Portrait (834px - 1024px) */
+@media (min-width: 835px) and (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: center;
+  }
+  .bento-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+  .dashboard-grid, .contact-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 9. Small Laptops & Netbooks (1024px - 1200px) */
+@media (min-width: 1025px) and (max-width: 1200px) {
+  .hero-content h1 {
+    font-size: 3.2rem;
+  }
+  .bento-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
+/* 10. Standard Laptops (1200px - 1366px) */
+@media (min-width: 1201px) and (max-width: 1366px) {
+  .hero-content h1 {
+    font-size: 3.5rem;
+  }
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  }
+}
+
+/* 11. Large Laptops / Retina displays (1367px - 1440px) */
+@media (min-width: 1367px) and (max-width: 1440px) {
+  .nav-container, .hero, .bento-section, .catalog-section, .contact-section {
+    max-width: 1300px;
+  }
+}
+
+/* 12. QHD / High-Res Monitors (1441px - 1600px) */
+@media (min-width: 1441px) and (max-width: 1600px) {
+  .nav-container, .hero, .bento-section, .catalog-section, .contact-section {
+    max-width: 1480px;
+  }
+}
+
+/* 13. Full HD Desktops / Big Screens (1601px - 1920px) */
+@media (min-width: 1601px) and (max-width: 1920px) {
+  .nav-container, .hero, .bento-section, .catalog-section, .contact-section {
+    max-width: 1680px;
+  }
+  body {
+    font-size: 1.05rem;
+  }
+}
+
+/* 14. 2K QHD screens (1921px - 2560px) */
+@media (min-width: 1921px) and (max-width: 2560px) {
+  .nav-container, .hero, .bento-section, .catalog-section, .contact-section {
+    max-width: 1800px;
+  }
+  body {
+    font-size: 1.1rem;
+  }
+  .hero-content h1 {
+    font-size: 4.5rem;
+  }
+  .products-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* 15. 4K UHD monitors / Large Displays (2561px - 3840px) */
+@media (min-width: 2561px) and (max-width: 3840px) {
+  .nav-container, .hero, .bento-section, .catalog-section, .contact-section {
+    max-width: 2200px;
+  }
+  body {
+    font-size: 1.2rem;
+  }
+  .hero-content h1 {
+    font-size: 5.5rem;
+  }
+  .products-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 40px;
+  }
+  .bento-grid {
+    gap: 40px;
+  }
+}
+
+/* 16. 8K UHD Giant Displays (above 3840px) */
+@media (min-width: 3841px) {
+  .nav-container, .hero, .bento-section, .catalog-section, .contact-section {
+    max-width: 3000px;
+  }
+  body {
+    font-size: 1.4rem;
+  }
+  .hero-content h1 {
+    font-size: 7rem;
+  }
+  .products-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 50px;
+  }
+}
+
+/* 17. Aspect Ratio: Ultra-Wide (21:9 or greater) */
+@media (min-aspect-ratio: 21/9) {
+  .nav-container, .hero, .bento-section, .catalog-section, .contact-section {
+    max-width: 1500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .aurora-bg::before {
+    background: radial-gradient(circle at 50% 50%, rgba(205, 170, 125, 0.12) 0%, transparent 60%);
+  }
+}
+
+/* 18. Aspect Ratio: Super Ultra-Wide (32:9 or greater) */
+@media (min-aspect-ratio: 32/9) {
+  .nav-container, .hero, .bento-section, .catalog-section, .contact-section {
+    max-width: 1400px;
+  }
+}
+
+/* 19. Landscape Compact Mobile (Height < 400px) */
+@media (max-height: 400px) and (orientation: landscape) {
+  .hero {
+    min-height: auto;
+    padding: 100px 5% 40px;
+  }
+  .hero-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+  }
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+  .hero-image-container {
+    height: 180px;
+  }
+  .hero-coffee-img {
+    max-height: 150px;
+  }
+}
+
+/* 20. Landscape Standard Mobile (Height < 480px) */
+@media (max-height: 480px) and (orientation: landscape) {
+  .hero {
+    min-height: auto;
+    padding: 110px 5% 50px;
+  }
+  .hero-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+  .hero-content h1 {
+    font-size: 2.2rem;
+  }
+  .hero-image-container {
+    height: 200px;
+  }
+  .hero-coffee-img {
+    max-height: 180px;
+  }
+}
+
+/* 21. Split Screen / Ultra Narrow Window (width < 280px) */
+@media (max-width: 280px) {
+  .logo span {
+    display: none; /* Hide Forge to keep logo narrow */
+  }
+  .nav-actions {
+    gap: 5px;
+  }
+  body {
+    font-size: 0.75rem;
+  }
+}
+
+/* 22. General Accessibility Touch Target Padding Enforcements */
+@media (pointer: coarse) {
+  .auth-btn, .qty-select, .add-cart-btn, .request-quote-btn, .submit-btn, .qty-btn, .filter-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 20px;
+  }
+  .like-btn, .mobile-nav-toggle {
+    width: 44px;
+    height: 44px;
+  }
 }

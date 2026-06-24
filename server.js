@@ -7,6 +7,14 @@ const url = require('url');
 // Load .env variables
 require('dotenv').config();
 
+// Single-Thread Guardrails (prevent process crashes from uncaught errors)
+process.on('uncaughtException', (err) => {
+  console.error('CRITICAL: Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const PORT = process.env.PORT || 3000;
 
 const MIME_TYPES = {
@@ -25,10 +33,24 @@ const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
 
-  // Set CORS headers for local debugging if needed
+  // Set Security and CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  
+  // Custom Content-Security-Policy
+  res.setHeader('Content-Security-Policy', 
+    "default-src 'self' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; " +
+    "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; " +
+    "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; " +
+    "img-src 'self' data: https:; " +
+    "script-src 'self' 'unsafe-inline'; " +
+    "connect-src 'self';"
+  );
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -39,6 +61,14 @@ const server = http.createServer(async (req, res) => {
   // 1. API Endpoint Handler
   if (pathname.startsWith('/api/')) {
     const apiName = pathname.substring(5); // e.g. "products"
+    
+    // Path Traversal Mitigation: Alphanumeric and hyphens/underscores only
+    if (!/^[a-zA-Z0-9_-]+$/.test(apiName)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, message: 'Invalid API endpoint name' }));
+      return;
+    }
+
     const filePath = path.join(__dirname, 'api', `${apiName}.js`);
 
     if (fs.existsSync(filePath)) {

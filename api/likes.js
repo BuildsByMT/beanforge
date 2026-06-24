@@ -5,15 +5,10 @@ module.exports = async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const user = verifyToken(req);
-      let userId = user ? user.userId : null;
-
-      // Fallback to query parameter if no token is passed
-      if (!userId && req.query.user_id) {
-        userId = parseInt(req.query.user_id, 10);
-      }
+      const userId = user ? user.userId : null;
 
       if (!userId) {
-        return res.status(400).json({ success: false, message: 'Authentication required or user_id must be provided' });
+        return res.status(401).json({ success: false, message: 'Authentication required. Please sign in.' });
       }
 
       const likes = await query('SELECT product_id FROM likes WHERE user_id = ?', [userId]);
@@ -28,15 +23,16 @@ module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const user = verifyToken(req);
-      let userId = user ? user.userId : null;
+      const userId = user ? user.userId : null;
 
-      const { user_id, product_id } = req.body;
-      if (!userId && user_id) {
-        userId = parseInt(user_id, 10);
+      const { product_id } = req.body;
+
+      if (!userId) {
+        return res.status(401).json({ success: false, message: 'Authentication required. Please sign in.' });
       }
 
-      if (!userId || !product_id) {
-        return res.status(400).json({ success: false, message: 'User ID and Product ID are required' });
+      if (!product_id) {
+        return res.status(400).json({ success: false, message: 'Product ID is required' });
       }
 
       // Check if product exists

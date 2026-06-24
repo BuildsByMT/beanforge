@@ -4,18 +4,10 @@ const { verifyToken } = require('./authHelper');
 module.exports = async function handler(req, res) {
   try {
     const user = verifyToken(req);
-    let userId = user ? user.userId : null;
+    const userId = user ? user.userId : null;
 
     if (!userId) {
-      if (req.method === 'GET') {
-        userId = req.query.user_id ? parseInt(req.query.user_id, 10) : null;
-      } else {
-        userId = req.body.user_id ? parseInt(req.body.user_id, 10) : null;
-      }
-    }
-
-    if (!userId) {
-      return res.status(400).json({ success: false, message: 'Authentication required or user_id must be provided' });
+      return res.status(401).json({ success: false, message: 'Authentication required. Please sign in.' });
     }
 
     // 1. GET: Retrieve user's orders with items
