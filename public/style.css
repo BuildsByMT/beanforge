@@ -1830,3 +1830,149 @@ select.form-input option {
     gap: 5px;
   }
 }
+
+/* --- Table Map Grid and Reservation UI --- */
+
+.table-map-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-top: 15px;
+}
+
+@media (max-width: 768px) {
+  .table-map-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.table-seat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  text-align: center;
+}
+
+.table-seat i {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+  transition: transform 0.2s ease;
+}
+
+.table-seat:hover i {
+  transform: scale(1.1);
+}
+
+.table-seat.available {
+  background: rgba(46, 204, 113, 0.05);
+  border: 1px solid rgba(46, 204, 113, 0.25);
+  color: #2ecc71;
+}
+
+.table-seat.available:hover {
+  background: rgba(46, 204, 113, 0.12);
+  border-color: #2ecc71;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.15);
+}
+
+.table-seat.booked {
+  background: rgba(231, 76, 60, 0.04);
+  border: 1px solid rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.table-seat.selected {
+  background: rgba(241, 196, 15, 0.12);
+  border: 2px dashed #f1c40f;
+  color: #f1c40f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(241, 196, 15, 0.2);
+  animation: selected-border-pulse 1.5s infinite alternate;
+}
+
+@keyframes selected-border-pulse {
+  0% { border-color: #f1c40f; }
+  100% { border-color: var(--accent-gold-dark, #b59530); }
+}
+
+.table-num-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* --- Switch Toggle Styling --- */
+
+.switch-toggle input:checked + .slider-toggle {
+  background-color: var(--accent-gold, #cfa83b);
+}
+
+.switch-toggle input:checked + .slider-toggle:before {
+  transform: translateX(20px);
+}
+
+.slider-toggle:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+/* --- Button Loading States --- */
+
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spinner-spin 0.6s linear infinite;
+}
+
+@keyframes spinner-spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* --- Pulse animation on Cart Icon --- */
+
+.pulse-anim {
+  animation: cart-pulse 0.5s ease-in-out;
+}
+
+@keyframes cart-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+/* --- Dashboard Responsive Grid Auto-fit override --- */
+
+.dashboard-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+}

@@ -157,6 +157,9 @@ async function fetchDashboardData() {
     
     const quotes = await apiRequest('/quotes');
     renderQuotes(quotes);
+
+    const bookings = await apiRequest('/bookings');
+    renderUserBookings(bookings);
   } catch (error) {
     console.error('Error fetching dashboard details:', error);
   }
@@ -446,6 +449,16 @@ async function handleAddToCart(productId) {
   const select = document.getElementById(`qty-select-${productId}`);
   const quantity = select ? parseInt(select.value, 10) : 1;
 
+  // Visual Morphing & Loader feedback
+  const productCard = document.getElementById(`product-${productId}`);
+  const btn = productCard ? productCard.querySelector('.add-cart-btn') : null;
+  let originalHTML = '';
+  if (btn) {
+    originalHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Adding...';
+    btn.disabled = true;
+  }
+
   try {
     const result = await apiRequest('/cart', {
       method: 'POST',
@@ -453,9 +466,33 @@ async function handleAddToCart(productId) {
     });
     
     showToast(result.message || 'Added to cart', 'success');
+    
+    // Animate Header Cart Icon
+    const cartIconBtn = document.querySelector('.cart-icon-btn');
+    if (cartIconBtn) {
+      cartIconBtn.classList.add('pulse-anim');
+      setTimeout(() => cartIconBtn.classList.remove('pulse-anim'), 600);
+    }
+
+    if (btn) {
+      btn.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #2ecc71; margin-right: 6px;"></i> Added!';
+      btn.style.background = 'rgba(46, 204, 113, 0.2)';
+      btn.style.borderColor = '#2ecc71';
+      setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+        btn.style.background = '';
+        btn.style.borderColor = '';
+      }, 1500);
+    }
+
     fetchUserCart();
   } catch (error) {
     showToast(`Error: ${error.message}`, 'error');
+    if (btn) {
+      btn.innerHTML = originalHTML;
+      btn.disabled = false;
+    }
   }
 }
 
@@ -521,6 +558,9 @@ async function checkoutCart() {
     return;
   }
 
+  const checkoutBtn = document.querySelector('.checkout-btn');
+  setButtonLoading(checkoutBtn, true);
+
   try {
     const result = await apiRequest('/orders', {
       method: 'POST'
@@ -534,6 +574,8 @@ async function checkoutCart() {
     fetchDashboardData();
   } catch (error) {
     showToast(`Checkout failed: ${error.message}`, 'error');
+  } finally {
+    setButtonLoading(checkoutBtn, false);
   }
 }
 
@@ -643,6 +685,9 @@ async function handleAuthSubmit(event, action) {
     body.password = document.getElementById('login-password').value;
   }
 
+  const submitBtn = event.target.querySelector('button[type="submit"]');
+  setButtonLoading(submitBtn, true);
+
   try {
     const data = await apiRequest(`/auth?action=${action}`, {
       method: 'POST',
@@ -669,6 +714,8 @@ async function handleAuthSubmit(event, action) {
     fetchDashboardData();
   } catch (error) {
     showToast(error.message, 'error');
+  } finally {
+    setButtonLoading(submitBtn, false);
   }
 }
 
@@ -740,6 +787,7 @@ const routes = {
   '/catalog': () => showRouteView('home', 'catalog'),
   '/features': () => showRouteView('home', 'features'),
   '/contact': () => showRouteView('home', 'contact'),
+  '/booking': () => showRouteView('booking'),
   '/dashboard': () => showRouteView('dashboard'),
   '/admin': () => showRouteView('admin'),
   '/login': () => showRouteView('login'),
@@ -784,6 +832,7 @@ function showRouteView(viewName, sectionId = null) {
   const homeView = document.getElementById('home-view');
   const dashView = document.getElementById('dashboard-view');
   const adminView = document.getElementById('admin-view');
+  const bookingView = document.getElementById('booking-view');
   
   // Close mobile navigation dropdown on view change
   closeMobileMenu();
@@ -806,6 +855,7 @@ function showRouteView(viewName, sectionId = null) {
     homeView.style.display = 'none';
     dashView.style.display = 'none';
     adminView.style.display = 'block';
+    bookingView.style.display = 'none';
     
     const navAdmin = document.querySelector('header a[href="/admin"]');
     if (navAdmin) navAdmin.classList.add('active');
@@ -820,14 +870,30 @@ function showRouteView(viewName, sectionId = null) {
     homeView.style.display = 'none';
     dashView.style.display = 'block';
     adminView.style.display = 'none';
+    bookingView.style.display = 'none';
     
     const navDash = document.querySelector('header a[href="/dashboard"]');
     if (navDash) navDash.classList.add('active');
     
     fetchDashboardData();
+  } else if (viewName === 'booking') {
+    if (!state.token) {
+      showToast('Please sign in to book a table', 'warning');
+      navigateTo('/login');
+      return;
+    }
+    homeView.style.display = 'none';
+    dashView.style.display = 'none';
+    adminView.style.display = 'none';
+    bookingView.style.display = 'block';
+    
+    const navBooking = document.querySelector('header a[href="/booking"]');
+    if (navBooking) navBooking.classList.add('active');
+    
+    initBookingView();
   } else if (viewName === 'login' || viewName === 'signup') {
     // Show auth modal, keep underlying view active
-    if (homeView.style.display === 'none' && dashView.style.display === 'none' && adminView.style.display === 'none') {
+    if (homeView.style.display === 'none' && dashView.style.display === 'none' && adminView.style.display === 'none' && bookingView.style.display === 'none') {
       homeView.style.display = 'block';
     }
     openAuthModal(viewName === 'login' ? 'login' : 'signup', false);
@@ -836,6 +902,7 @@ function showRouteView(viewName, sectionId = null) {
     homeView.style.display = 'block';
     dashView.style.display = 'none';
     adminView.style.display = 'none';
+    bookingView.style.display = 'none';
     
     let activePath = '/home';
     if (sectionId) {
@@ -957,6 +1024,13 @@ async function fetchAdminData() {
         ordersList.appendChild(tr);
       });
     }
+
+    // 4. Wholesale Quotes
+    renderAdminQuotes(data.quotes);
+
+    // 5. Table Reservations
+    renderAdminBookings(data.bookings);
+
   } catch (error) {
     showToast(`Failed to fetch admin dashboard records: ${error.message}`, 'error');
   }
@@ -1308,3 +1382,501 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// --- Table Booking & Admin Quotes/Bookings Systems ---
+
+function initBookingView() {
+  const dateInput = document.getElementById('booking-date');
+  if (dateInput) {
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+    if (!dateInput.value) {
+      dateInput.value = today;
+    }
+  }
+  document.getElementById('selected-table-number').value = '';
+  document.getElementById('booking-preorder').checked = false;
+  
+  checkTableAvailability();
+}
+
+async function checkTableAvailability() {
+  const date = document.getElementById('booking-date').value;
+  const time = document.getElementById('booking-time').value;
+  const gridContainer = document.getElementById('visual-table-grid');
+  
+  if (!date || !time) return;
+
+  gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Checking table availability...</div>';
+
+  try {
+    const bookedTables = await apiRequest(`/bookings?date=${date}&time=${time}`);
+    renderVisualTableGrid(bookedTables);
+  } catch (error) {
+    showToast(`Failed to load table availability: ${error.message}`, 'error');
+    gridContainer.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 20px;">Failed to load tables.</div>';
+  }
+}
+
+function renderVisualTableGrid(bookedTables = []) {
+  const gridContainer = document.getElementById('visual-table-grid');
+  gridContainer.innerHTML = '';
+  
+  const selectedInput = document.getElementById('selected-table-number');
+  const selectedVal = selectedInput.value ? parseInt(selectedInput.value, 10) : null;
+
+  for (let i = 1; i <= 12; i++) {
+    const isBooked = bookedTables.includes(i);
+    const isSelected = selectedVal === i;
+
+    const div = document.createElement('div');
+    div.className = `table-seat ${isBooked ? 'booked' : 'available'} ${isSelected ? 'selected' : ''}`;
+    div.innerHTML = `
+      <i class="fa-solid fa-chair"></i>
+      <span class="table-num-label">Table ${i}</span>
+    `;
+
+    if (!isBooked) {
+      div.onclick = () => {
+        if (selectedInput.value === String(i)) {
+          selectedInput.value = '';
+        } else {
+          selectedInput.value = String(i);
+        }
+        renderVisualTableGrid(bookedTables);
+      };
+    }
+    gridContainer.appendChild(div);
+  }
+}
+
+async function handlePlaceBookingSubmit(event) {
+  event.preventDefault();
+  
+  const name = document.getElementById('booking-name').value;
+  const date = document.getElementById('booking-date').value;
+  const time = document.getElementById('booking-time').value;
+  const tableNum = document.getElementById('selected-table-number').value;
+  const preOrder = document.getElementById('booking-preorder').checked;
+
+  if (!tableNum) {
+    showToast('Please select a table from the visual map first', 'warning');
+    return;
+  }
+
+  const submitBtn = event.target.querySelector('button[type="submit"]');
+  setButtonLoading(submitBtn, true);
+
+  try {
+    const result = await apiRequest('/bookings', {
+      method: 'POST',
+      body: JSON.stringify({
+        reservation_name: name,
+        booking_date: date,
+        booking_time: time,
+        table_number: parseInt(tableNum, 10),
+        pre_order: preOrder
+      })
+    });
+
+    showToast(result.message || 'Table booked successfully!', 'success');
+    
+    // Clear form
+    document.getElementById('table-booking-form').reset();
+    document.getElementById('selected-table-number').value = '';
+    
+    // Redirect to dashboard to check reservation list
+    navigateTo('/dashboard');
+  } catch (error) {
+    showToast(`Booking failed: ${error.message}`, 'error');
+  } finally {
+    setButtonLoading(submitBtn, false);
+  }
+}
+
+function renderUserBookings(bookings = []) {
+  const container = document.getElementById('dashboard-bookings-list');
+  if (!container) return;
+
+  if (bookings.length === 0) {
+    container.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 40px 0;">No reservations booked yet.</p>`;
+    return;
+  }
+
+  container.innerHTML = '';
+  bookings.forEach(b => {
+    const dateStr = new Date(b.booking_date).toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    const preOrderItems = b.items && b.items.length > 0
+      ? b.items.map(item => `${escapeHTML(item.product_name)} (x${item.quantity})`).join(', ')
+      : 'None';
+
+    const div = document.createElement('div');
+    div.className = 'dash-item';
+    
+    let footerHTML = '';
+    if (b.status === 'pending') {
+      footerHTML = `
+        <button class="cancel-order-btn" onclick="handleCancelUserBooking(${b.booking_id})">
+          <i class="fa-regular fa-trash-can"></i> Cancel Reservation
+        </button>
+      `;
+    } else if (b.status === 'confirmed') {
+      footerHTML = `
+        <span class="order-notice-msg" style="color: #2ecc71; font-size: 0.85rem; font-weight: 600;">
+          <i class="fa-solid fa-circle-check"></i> Reservation confirmed by host. See you soon!
+        </span>
+      `;
+    } else {
+      footerHTML = `
+        <span class="order-notice-msg" style="color: var(--text-muted); font-size: 0.85rem;">
+          Status: <strong>${b.status.toUpperCase()}</strong>
+        </span>
+      `;
+    }
+
+    div.innerHTML = `
+      <div class="dash-item-header">
+        <span>Reservation #${b.booking_id} • ${dateStr}</span>
+        <span class="status-badge status-${b.status}">${b.status.toUpperCase()}</span>
+      </div>
+      <div class="dash-item-body" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+        <div style="width: 100%; display: flex; justify-content: space-between;">
+          <div>
+            <div style="font-weight: 600; font-size: 1rem; color: white;">Reserved Name: ${escapeHTML(b.reservation_name)}</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
+              Slot: <strong style="color: white;">${b.booking_time}</strong> • Table: <strong style="color: var(--accent-gold); font-size: 0.95rem;">Table ${b.table_number}</strong>
+            </div>
+          </div>
+          ${b.total_price ? `
+          <div style="text-align: right;">
+            <div style="font-size: 0.75rem; color: var(--text-muted);">Pre-order Total</div>
+            <div style="font-weight: 700; color: var(--accent-gold); font-size: 1rem;">Rs. ${Number(b.total_price).toLocaleString()}</div>
+          </div>` : ''}
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); padding-top: 6px; border-top: 1px solid rgba(255, 255, 255, 0.03); width: 100%;">
+          Pre-ordered items: <span style="color: white; font-weight: 500;">${preOrderItems}</span>
+        </div>
+      </div>
+      <div class="dash-item-footer">
+        ${footerHTML}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function handleCancelUserBooking(bookingId) {
+  showCustomConfirm(
+    'Cancel Reservation',
+    `Are you sure you want to cancel and delete table reservation #${bookingId}?`,
+    async () => {
+      try {
+        await apiRequest(`/bookings?booking_id=${bookingId}`, {
+          method: 'DELETE'
+        });
+        showToast(`Reservation #${bookingId} has been successfully cancelled.`, 'success');
+        fetchDashboardData();
+      } catch (error) {
+        showToast(`Failed to cancel reservation: ${error.message}`, 'error');
+      }
+    },
+    true
+  );
+}
+
+// --- Admin Dashboard Quotes Helpers ---
+
+function renderAdminQuotes(quotes = []) {
+  const container = document.getElementById('admin-quotes-list');
+  if (!container) return;
+
+  if (quotes.length === 0) {
+    container.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 20px 0;">No wholesale quotes requested yet.</td></tr>';
+    return;
+  }
+
+  container.innerHTML = '';
+  quotes.forEach(q => {
+    const dateStr = new Date(q.created_at).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const totalEst = Number(q.base_price) * q.quantity_lbs;
+
+    const statusSelect = `
+      <select class="admin-status-select" onchange="handleAdminUpdateQuoteStatus(${q.quote_id}, this.value)">
+        <option value="pending" ${q.status === 'pending' ? 'selected' : ''}>PENDING</option>
+        <option value="preparing" ${q.status === 'preparing' ? 'selected' : ''}>PREPARING</option>
+        <option value="approved" ${q.status === 'approved' ? 'selected' : ''}>APPROVED</option>
+        <option value="completed" ${q.status === 'completed' ? 'selected' : ''}>COMPLETED</option>
+        <option value="cancelled" ${q.status === 'cancelled' ? 'selected' : ''}>CANCELLED</option>
+      </select>
+    `;
+
+    const actionsHTML = `
+      <div style="white-space: nowrap;">
+        <button class="admin-action-btn edit-btn" onclick="openAdminEditQuoteModal(${q.quote_id}, ${q.quantity_lbs}, '${q.status}')" title="Edit Quote Details">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <button class="admin-action-btn delete-btn" onclick="openAdminDeleteQuoteModal(${q.quote_id})" title="Delete Quote">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    `;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>#${q.quote_id}</td>
+      <td>
+        <strong>${escapeHTML(q.user_name)}</strong><br>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">${escapeHTML(q.user_email)}</span>
+      </td>
+      <td>
+        <strong style="color: white;">${escapeHTML(q.product_name)}</strong><br>
+        <small style="color: var(--text-muted);">${dateStr}</small>
+      </td>
+      <td style="font-weight: 600; color: white;">${q.quantity_lbs} lbs</td>
+      <td style="font-weight: 700; color: var(--accent-gold);">Rs. ${totalEst.toLocaleString()}</td>
+      <td>${statusSelect}</td>
+      <td>${actionsHTML}</td>
+    `;
+    container.appendChild(tr);
+  });
+}
+
+async function handleAdminUpdateQuoteStatus(quoteId, newStatus) {
+  try {
+    await apiRequest('/admin', {
+      method: 'PUT',
+      body: JSON.stringify({
+        quote_id: quoteId,
+        status: newStatus
+      })
+    });
+    showToast(`Quote #${quoteId} status updated to ${newStatus.toUpperCase()}`, 'success');
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to update quote status: ${error.message}`, 'error');
+  }
+}
+
+function openAdminEditQuoteModal(quoteId, qty, status) {
+  document.getElementById('edit-quote-id').value = quoteId;
+  document.getElementById('edit-quote-id-display').value = `#${quoteId}`;
+  document.getElementById('edit-quote-quantity').value = qty;
+  document.getElementById('edit-quote-status').value = status;
+  
+  document.getElementById('admin-edit-quote-modal').classList.add('open');
+}
+
+function closeAdminEditQuoteModal() {
+  document.getElementById('admin-edit-quote-modal').classList.remove('open');
+}
+
+async function handleAdminEditQuoteSubmit(event) {
+  event.preventDefault();
+  const quoteId = parseInt(document.getElementById('edit-quote-id').value, 10);
+  const qty = parseInt(document.getElementById('edit-quote-quantity').value, 10);
+  const status = document.getElementById('edit-quote-status').value;
+
+  try {
+    await apiRequest('/admin', {
+      method: 'PUT',
+      body: JSON.stringify({
+        quote_id: quoteId,
+        quantity_lbs: qty,
+        status: status
+      })
+    });
+    showToast(`Quote #${quoteId} details updated successfully`, 'success');
+    closeAdminEditQuoteModal();
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to edit quote: ${error.message}`, 'error');
+  }
+}
+
+function openAdminDeleteQuoteModal(quoteId) {
+  document.getElementById('delete-quote-id-display').textContent = `#${quoteId}`;
+  const confirmBtn = document.getElementById('confirm-delete-quote-btn');
+  confirmBtn.onclick = () => handleAdminDeleteQuote(quoteId);
+  
+  document.getElementById('admin-delete-quote-modal').classList.add('open');
+}
+
+function closeAdminDeleteQuoteModal() {
+  document.getElementById('admin-delete-quote-modal').classList.remove('open');
+}
+
+async function handleAdminDeleteQuote(quoteId) {
+  try {
+    await apiRequest(`/admin?quote_id=${quoteId}`, {
+      method: 'DELETE'
+    });
+    showToast(`Wholesale quote request #${quoteId} deleted successfully`, 'success');
+    closeAdminDeleteQuoteModal();
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to delete quote: ${error.message}`, 'error');
+  }
+}
+
+// --- Admin Dashboard Bookings Helpers ---
+
+function renderAdminBookings(bookings = []) {
+  const container = document.getElementById('admin-bookings-list');
+  if (!container) return;
+
+  if (bookings.length === 0) {
+    container.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 20px 0;">No table reservations booked yet.</td></tr>';
+    return;
+  }
+
+  container.innerHTML = '';
+  bookings.forEach(b => {
+    const dateStr = new Date(b.booking_date).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric'
+    });
+
+    const statusSelect = `
+      <select class="admin-status-select" onchange="handleAdminUpdateBookingStatus(${b.booking_id}, this.value)">
+        <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>PENDING</option>
+        <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>CONFIRMED</option>
+        <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>COMPLETED</option>
+        <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>CANCELLED</option>
+      </select>
+    `;
+
+    const actionsHTML = `
+      <div style="white-space: nowrap;">
+        <button class="admin-action-btn edit-btn" onclick="openAdminEditBookingModal(${b.booking_id}, ${b.table_number}, '${b.status}')" title="Adjust Booking Details">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        <button class="admin-action-btn delete-btn" onclick="openAdminDeleteBookingModal(${b.booking_id})" title="Delete Reservation">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    `;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>#${b.booking_id}</td>
+      <td>
+        <strong>${escapeHTML(b.user_name)}</strong><br>
+        <span style="font-size: 0.78rem; color: var(--text-muted);">${escapeHTML(b.user_email)}</span>
+      </td>
+      <td><strong style="color: white;">${escapeHTML(b.reservation_name)}</strong></td>
+      <td>
+        <strong>${dateStr}</strong><br>
+        <small style="color: var(--text-muted);">${b.booking_time}</small>
+      </td>
+      <td style="font-weight: 600; color: var(--accent-gold);">Table ${b.table_number}</td>
+      <td>
+        <span style="font-size: 0.8rem;">${escapeHTML(b.pre_orders_summary) || 'None'}</span>
+        ${b.total_price ? `<br><small style="color: var(--accent-gold); font-weight: 600;">Rs. ${Number(b.total_price).toLocaleString()}</small>` : ''}
+      </td>
+      <td>${statusSelect}</td>
+      <td>${actionsHTML}</td>
+    `;
+    container.appendChild(tr);
+  });
+}
+
+async function handleAdminUpdateBookingStatus(bookingId, newStatus) {
+  try {
+    await apiRequest('/admin', {
+      method: 'PUT',
+      body: JSON.stringify({
+        booking_id: bookingId,
+        status: newStatus
+      })
+    });
+    showToast(`Booking #${bookingId} status updated to ${newStatus.toUpperCase()}`, 'success');
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to update booking status: ${error.message}`, 'error');
+  }
+}
+
+function openAdminEditBookingModal(bookingId, tableNum, status) {
+  document.getElementById('edit-booking-id').value = bookingId;
+  document.getElementById('edit-booking-id-display').value = `#${bookingId}`;
+  document.getElementById('edit-booking-table').value = tableNum;
+  document.getElementById('edit-booking-status').value = status;
+  
+  document.getElementById('admin-edit-booking-modal').classList.add('open');
+}
+
+function closeAdminEditBookingModal() {
+  document.getElementById('admin-edit-booking-modal').classList.remove('open');
+}
+
+async function handleAdminEditBookingSubmit(event) {
+  event.preventDefault();
+  const bookingId = parseInt(document.getElementById('edit-booking-id').value, 10);
+  const tableNum = parseInt(document.getElementById('edit-booking-table').value, 10);
+  const status = document.getElementById('edit-booking-status').value;
+
+  try {
+    await apiRequest('/admin', {
+      method: 'PUT',
+      body: JSON.stringify({
+        booking_id: bookingId,
+        table_number: tableNum,
+        status: status
+      })
+    });
+    showToast(`Booking #${bookingId} details updated successfully`, 'success');
+    closeAdminEditBookingModal();
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to edit booking details: ${error.message}`, 'error');
+  }
+}
+
+function openAdminDeleteBookingModal(bookingId) {
+  document.getElementById('delete-booking-id-display').textContent = `#${bookingId}`;
+  const confirmBtn = document.getElementById('confirm-delete-booking-btn');
+  confirmBtn.onclick = () => handleAdminDeleteBooking(bookingId);
+  
+  document.getElementById('admin-delete-booking-modal').classList.add('open');
+}
+
+function closeAdminDeleteBookingModal() {
+  document.getElementById('admin-delete-booking-modal').classList.remove('open');
+}
+
+async function handleAdminDeleteBooking(bookingId) {
+  try {
+    await apiRequest(`/admin?booking_id=${bookingId}`, {
+      method: 'DELETE'
+    });
+    showToast(`Reservation #${bookingId} deleted successfully`, 'success');
+    closeAdminDeleteBookingModal();
+    fetchAdminData();
+  } catch (error) {
+    showToast(`Failed to delete booking: ${error.message}`, 'error');
+  }
+}
+
+// Helper to toggle a submit button to loading state
+function setButtonLoading(button, isLoading) {
+  if (!button) return;
+  if (isLoading) {
+    button.classList.add('btn-loading');
+    button.disabled = true;
+  } else {
+    button.classList.remove('btn-loading');
+    button.disabled = false;
+  }
+}

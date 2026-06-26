@@ -31,6 +31,33 @@ async function query(sql, params) {
   }
 }
 
+// Automatically check and run table migrations
+(async () => {
+  try {
+    const connection = await pool.getConnection();
+    console.log('Database connected successfully. Running migrations check...');
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS bookings (
+        booking_id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        reservation_name VARCHAR(255) NOT NULL,
+        booking_date DATE NOT NULL,
+        booking_time VARCHAR(50) NOT NULL,
+        table_number INT NOT NULL,
+        status VARCHAR(50) DEFAULT 'pending',
+        order_id INT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+        FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE SET NULL
+      )
+    `);
+    console.log('Migrations check completed: bookings table is ready.');
+    connection.release();
+  } catch (err) {
+    console.error('Database migration/connection error:', err);
+  }
+})();
+
 module.exports = {
   pool,
   query

@@ -28,6 +28,7 @@
           <li><a href="/home" class="active">Home</a></li>
           <li><a href="/catalog">Catalog</a></li>
           <li><a href="/features">Features</a></li>
+          <li class="user-only" style="display: none;"><a href="/booking">Book a Table</a></li>
           <li><a href="/contact">Contact</a></li>
           <li class="user-only" style="display: none;"><a href="/dashboard">Dashboard</a></li>
           <li class="admin-only" style="display: none;"><a href="/admin">Admin Panel</a></li>
@@ -225,9 +226,102 @@
               <p style="color: var(--text-muted); text-align: center; padding: 40px 0;">No quotes requested yet.</p>
             </div>
           </div>
+          
+          <!-- Table Reservations panel -->
+          <div class="dash-panel glass-panel">
+            <h3><i class="fa-solid fa-chair" style="color: var(--accent-gold); margin-right: 10px;"></i> Table Reservations</h3>
+            <div class="dash-list" id="dashboard-bookings-list">
+              <p style="color: var(--text-muted); text-align: center; padding: 40px 0;">No reservations booked yet.</p>
+            </div>
+          </div>
         </div>
       </section>
     </div> <!-- End Dashboard View -->
+
+    <!-- Table Booking View (Only visible to logged-in users) -->
+    <div id="booking-view" style="display: none;">
+      <section class="dashboard-section" id="booking" style="display: block;">
+        <div class="section-header" style="margin-top: 80px;">
+          <h2 class="shiny-title">Book a Table</h2>
+          <p>Reserve your premium coffee tasting table. Select date, time slot, and table number.</p>
+        </div>
+        
+        <div class="dashboard-grid" style="grid-template-columns: 1fr 1.5fr; gap: 30px;">
+          <!-- Left Panel: Booking Options Form -->
+          <div class="dash-panel glass-panel">
+            <h3><i class="fa-solid fa-calendar-days" style="color: var(--accent-gold); margin-right: 10px;"></i> Reservation Details</h3>
+            <form id="table-booking-form" onsubmit="handlePlaceBookingSubmit(event)">
+              <div class="form-group">
+                <label class="form-label" for="booking-name">Reservation Name</label>
+                <input type="text" class="form-input" id="booking-name" required placeholder="e.g. Tanveer Ahmad">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="booking-date">Select Date</label>
+                <input type="date" class="form-input" id="booking-date" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="booking-time">Select Time Slot</label>
+                <select class="form-input" id="booking-time" required onchange="checkTableAvailability()">
+                  <option value="11:00 AM">11:00 AM - 12:30 PM</option>
+                  <option value="12:30 PM">12:30 PM - 02:00 PM</option>
+                  <option value="02:00 PM" selected>02:00 PM - 03:30 PM</option>
+                  <option value="03:30 PM">03:30 PM - 05:00 PM</option>
+                  <option value="05:00 PM">05:00 PM - 06:30 PM</option>
+                  <option value="06:30 PM">06:30 PM - 08:00 PM</option>
+                  <option value="08:00 PM">08:00 PM - 09:30 PM</option>
+                  <option value="09:30 PM">09:30 PM - 11:00 PM</option>
+                </select>
+              </div>
+              
+              <!-- Pre-order current cart options -->
+              <div class="form-group" style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.02); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div>
+                    <strong style="color: white; font-size: 0.9rem;">Pre-order Coffee & Drinks</strong>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Link current items in cart to this reservation.</p>
+                  </div>
+                  <label class="switch-toggle" style="position: relative; display: inline-block; width: 44px; height: 22px;">
+                    <input type="checkbox" id="booking-preorder" style="opacity: 0; width: 0; height: 0;">
+                    <span class="slider-toggle" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255, 255, 255, 0.1); transition: .4s; border-radius: 22px;"></span>
+                  </label>
+                </div>
+              </div>
+              
+              <input type="hidden" id="selected-table-number" value="">
+              
+              <button type="submit" class="submit-btn" style="margin-top: 20px; width: 100%;">
+                <i class="fa-solid fa-circle-check"></i> Complete Reservation
+              </button>
+            </form>
+          </div>
+          
+          <!-- Right Panel: Visual Table Grid -->
+          <div class="dash-panel glass-panel">
+            <h3><i class="fa-solid fa-chair" style="color: var(--accent-gold); margin-right: 10px;"></i> Select Available Table</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Choose one of our premium lounge tables. Green tables are free, red tables are already reserved.</p>
+            
+            <div class="table-map-grid" id="visual-table-grid">
+              <!-- Dynamically generated visual tables -->
+            </div>
+            
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 25px; font-size: 0.85rem;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 15px; height: 15px; background: rgba(46, 204, 113, 0.2); border: 2px solid #2ecc71; border-radius: 4px;"></div>
+                <span>Available</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 15px; height: 15px; background: rgba(231, 76, 60, 0.2); border: 2px solid #e74c3c; border-radius: 4px;"></div>
+                <span>Booked</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 15px; height: 15px; background: rgba(241, 196, 15, 0.3); border: 2px solid #f1c40f; border-radius: 4px;"></div>
+                <span>Your Selection</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
 
     <!-- Admin View (Only visible to admin users) -->
     <div id="admin-view" style="display: none;">
@@ -369,6 +463,53 @@
               </thead>
               <tbody id="admin-orders-list">
                 <!-- Dynamic Orders list injects here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Wholesale Procurement Quotes panel -->
+        <div class="admin-panel glass-panel" style="margin-top: 30px;">
+          <h3><i class="fa-solid fa-file-invoice-dollar" style="color: var(--accent-gold); margin-right: 10px;"></i> Wholesale Bean Quotes</h3>
+          <div class="admin-table-container">
+            <table class="admin-table" id="admin-quotes-table">
+              <thead>
+                <tr>
+                  <th>Quote ID</th>
+                  <th>Customer</th>
+                  <th>Coffee Bean</th>
+                  <th>Volume (lbs)</th>
+                  <th>Est. Price</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-quotes-list">
+                <!-- Dynamic Quotes list injects here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Table Reservations panel -->
+        <div class="admin-panel glass-panel" style="margin-top: 30px;">
+          <h3><i class="fa-solid fa-chair" style="color: var(--accent-gold); margin-right: 10px;"></i> Table Reservations</h3>
+          <div class="admin-table-container">
+            <table class="admin-table" id="admin-bookings-table">
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Customer</th>
+                  <th>Reservation Name</th>
+                  <th>Date & Time</th>
+                  <th>Table</th>
+                  <th>Pre-Order Details</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admin-bookings-list">
+                <!-- Dynamic Bookings list injects here -->
               </tbody>
             </table>
           </div>
@@ -530,6 +671,116 @@
         <div style="display: flex; gap: 15px; justify-content: center;">
           <button class="secondary-btn" onclick="closeAdminDeleteOrderModal()" style="padding: 10px 24px; font-size: 0.9rem;">Cancel</button>
           <button class="submit-btn" id="confirm-delete-order-btn" style="background: #dc3545; border-color: #dc3545; color: white; padding: 10px 24px; font-size: 0.9rem; margin-top: 0;">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Edit Quote Modal -->
+    <div class="modal-overlay" id="admin-edit-quote-modal">
+      <div class="modal-content glass-panel">
+        <button class="modal-close" onclick="closeAdminEditQuoteModal()">&times;</button>
+        <h3 class="modal-title">Edit Wholesale Quote</h3>
+        <form id="admin-edit-quote-form" onsubmit="handleAdminEditQuoteSubmit(event)">
+          <input type="hidden" id="edit-quote-id">
+          
+          <div class="form-group">
+            <label class="form-label">Quote ID</label>
+            <input type="text" class="form-input" id="edit-quote-id-display" readonly style="background: rgba(255, 255, 255, 0.01); color: var(--text-muted);">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit-quote-quantity">Volume (in lbs)</label>
+            <input type="number" class="form-input" id="edit-quote-quantity" required min="50">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit-quote-status">Quote Status</label>
+            <select class="form-input" id="edit-quote-status" required>
+              <option value="pending">PENDING</option>
+              <option value="preparing">PREPARING</option>
+              <option value="approved">APPROVED</option>
+              <option value="completed">COMPLETED</option>
+              <option value="cancelled">CANCELLED</option>
+            </select>
+          </div>
+          
+          <button type="submit" class="submit-btn">Update Quote</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Delete Quote Confirmation Modal -->
+    <div class="modal-overlay" id="admin-delete-quote-modal">
+      <div class="modal-content glass-panel" style="text-align: center; max-width: 400px;">
+        <button class="modal-close" onclick="closeAdminDeleteQuoteModal()">&times;</button>
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: #ff4d4d; margin-bottom: 20px;"></i>
+        <h3 class="modal-title" style="margin-bottom: 15px;">Delete Wholesale Quote</h3>
+        <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem;">Are you sure you want to permanently delete wholesale quote request <strong id="delete-quote-id-display" style="color: white;">#0</strong>? This action cannot be undone.</p>
+        
+        <div style="display: flex; gap: 15px; justify-content: center;">
+          <button class="secondary-btn" onclick="closeAdminDeleteQuoteModal()" style="padding: 10px 24px; font-size: 0.9rem;">Cancel</button>
+          <button class="submit-btn" id="confirm-delete-quote-btn" style="background: #dc3545; border-color: #dc3545; color: white; padding: 10px 24px; font-size: 0.9rem; margin-top: 0;">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Edit Booking Modal -->
+    <div class="modal-overlay" id="admin-edit-booking-modal">
+      <div class="modal-content glass-panel">
+        <button class="modal-close" onclick="closeAdminEditBookingModal()">&times;</button>
+        <h3 class="modal-title">Adjust Booking Details</h3>
+        <form id="admin-edit-booking-form" onsubmit="handleAdminEditBookingSubmit(event)">
+          <input type="hidden" id="edit-booking-id">
+          
+          <div class="form-group">
+            <label class="form-label">Booking ID</label>
+            <input type="text" class="form-input" id="edit-booking-id-display" readonly style="background: rgba(255, 255, 255, 0.01); color: var(--text-muted);">
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit-booking-table">Adjust Table Number</label>
+            <select class="form-input" id="edit-booking-table" required>
+              <option value="1">Table 1</option>
+              <option value="2">Table 2</option>
+              <option value="3">Table 3</option>
+              <option value="4">Table 4</option>
+              <option value="5">Table 5</option>
+              <option value="6">Table 6</option>
+              <option value="7">Table 7</option>
+              <option value="8">Table 8</option>
+              <option value="9">Table 9</option>
+              <option value="10">Table 10</option>
+              <option value="11">Table 11</option>
+              <option value="12">Table 12</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit-booking-status">Booking Status</label>
+            <select class="form-input" id="edit-booking-status" required>
+              <option value="pending">PENDING</option>
+              <option value="confirmed">CONFIRMED</option>
+              <option value="completed">COMPLETED</option>
+              <option value="cancelled">CANCELLED</option>
+            </select>
+          </div>
+          
+          <button type="submit" class="submit-btn">Update Booking</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Delete Booking Confirmation Modal -->
+    <div class="modal-overlay" id="admin-delete-booking-modal">
+      <div class="modal-content glass-panel" style="text-align: center; max-width: 400px;">
+        <button class="modal-close" onclick="closeAdminDeleteBookingModal()">&times;</button>
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 3rem; color: #ff4d4d; margin-bottom: 20px;"></i>
+        <h3 class="modal-title" style="margin-bottom: 15px;">Delete Reservation</h3>
+        <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem;">Are you sure you want to permanently delete table reservation <strong id="delete-booking-id-display" style="color: white;">#0</strong>? This action cannot be undone.</p>
+        
+        <div style="display: flex; gap: 15px; justify-content: center;">
+          <button class="secondary-btn" onclick="closeAdminDeleteBookingModal()" style="padding: 10px 24px; font-size: 0.9rem;">Cancel</button>
+          <button class="submit-btn" id="confirm-delete-booking-btn" style="background: #dc3545; border-color: #dc3545; color: white; padding: 10px 24px; font-size: 0.9rem; margin-top: 0;">Delete</button>
         </div>
       </div>
     </div>

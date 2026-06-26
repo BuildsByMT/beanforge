@@ -123,14 +123,22 @@ module.exports = async function handler(req, res) {
         return res.status(400).json({ success: false, message: 'Order ID is required' });
       }
 
-      // Check order ownership
-      const checkOrder = await query('SELECT user_id FROM orders WHERE order_id = ?', [orderId]);
+      // Check order ownership and status
+      const checkOrder = await query('SELECT user_id, status FROM orders WHERE order_id = ?', [orderId]);
       if (checkOrder.length === 0) {
         return res.status(404).json({ success: false, message: 'Order not found' });
       }
 
       if (checkOrder[0].user_id !== userId) {
         return res.status(403).json({ success: false, message: 'Forbidden: You do not own this order' });
+      }
+
+      const status = checkOrder[0].status;
+      if (status !== 'pending') {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot cancel order because it is already in "${status}" status.`
+        });
       }
 
       await query('DELETE FROM orders WHERE order_id = ? AND user_id = ?', [orderId, userId]);
