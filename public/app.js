@@ -842,6 +842,7 @@ function showRouteView(viewName, sectionId = null) {
     }
     lastKnownAdminData = { maxOrderId: 0, maxQuoteId: 0, maxBookingId: 0 };
     newAdminItemIds = { orders: [], quotes: [], bookings: [] };
+    lastKnownAdminIds = { orders: null, quotes: null, bookings: null, users: null };
   }
 
   // Close mobile navigation dropdown on view change
@@ -958,6 +959,7 @@ function setView(viewName) {
 let adminSyncInterval = null;
 let lastKnownAdminData = { maxOrderId: 0, maxQuoteId: 0, maxBookingId: 0 };
 let newAdminItemIds = { orders: [], quotes: [], bookings: [] };
+let lastKnownAdminIds = { orders: null, quotes: null, bookings: null, users: null };
 
 async function fetchAdminData(isBackground = false) {
   if (!state.token || !state.user || state.user.role !== 'admin') return;
@@ -965,51 +967,92 @@ async function fetchAdminData(isBackground = false) {
   try {
     const data = await apiRequest('/admin');
     
-    // Check for new items to show notifications
-    if (lastKnownAdminData.maxOrderId > 0 || lastKnownAdminData.maxQuoteId > 0 || lastKnownAdminData.maxBookingId > 0) {
-      // Check for new orders
-      const currentMaxOrder = data.orders && data.orders.length > 0 ? Math.max(...data.orders.map(o => o.order_id)) : 0;
-      if (currentMaxOrder > lastKnownAdminData.maxOrderId) {
-        showToast('🔔 New customer order placed!', 'info');
-        data.orders.forEach(o => {
-          if (o.order_id > lastKnownAdminData.maxOrderId && !newAdminItemIds.orders.includes(o.order_id)) {
+    const currentOrders = data.orders || [];
+    const currentQuotes = data.quotes || [];
+    const currentBookings = data.bookings || [];
+    const currentUsers = data.users || [];
+
+    const currentOrderIds = currentOrders.map(o => o.order_id);
+    const currentQuoteIds = currentQuotes.map(q => q.quote_id);
+    const currentBookingIds = currentBookings.map(b => b.booking_id);
+    const currentUserIds = currentUsers.map(u => u.user_id);
+
+    // Check for new/deleted items to show detailed notifications
+    if (lastKnownAdminIds.orders !== null) {
+      // 1. Check for new orders
+      currentOrders.forEach(o => {
+        if (!lastKnownAdminIds.orders.includes(o.order_id)) {
+          showToast(`🔔 New Order #${o.order_id} placed by ${o.user_name || 'Customer'} (Rs. ${Number(o.total_price).toLocaleString()})!`, 'success');
+          if (!newAdminItemIds.orders.includes(o.order_id)) {
             newAdminItemIds.orders.push(o.order_id);
           }
-        });
-      }
+        }
+      });
 
-      // Check for new quotes
-      const currentMaxQuote = data.quotes && data.quotes.length > 0 ? Math.max(...data.quotes.map(q => q.quote_id)) : 0;
-      if (currentMaxQuote > lastKnownAdminData.maxQuoteId) {
-        showToast('☕ New wholesale quote requested!', 'info');
-        data.quotes.forEach(q => {
-          if (q.quote_id > lastKnownAdminData.maxQuoteId && !newAdminItemIds.quotes.includes(q.quote_id)) {
+      // 2. Check for cancelled/deleted orders
+      lastKnownAdminIds.orders.forEach(oldId => {
+        if (!currentOrderIds.includes(oldId)) {
+          showToast(`⚠️ Order #${oldId} was cancelled/removed by user!`, 'warning');
+        }
+      });
+
+      // 3. Check for new quotes
+      currentQuotes.forEach(q => {
+        if (!lastKnownAdminIds.quotes.includes(q.quote_id)) {
+          showToast(`☕ New wholesale quote #${q.quote_id} requested by ${q.user_name || 'Customer'} for ${q.quantity_lbs} lbs of ${q.product_name || 'coffee'}!`, 'success');
+          if (!newAdminItemIds.quotes.includes(q.quote_id)) {
             newAdminItemIds.quotes.push(q.quote_id);
           }
-        });
-      }
+        }
+      });
 
-      // Check for new bookings
-      const currentMaxBooking = data.bookings && data.bookings.length > 0 ? Math.max(...data.bookings.map(b => b.booking_id)) : 0;
-      if (currentMaxBooking > lastKnownAdminData.maxBookingId) {
-        showToast('📅 New table reservation received!', 'info');
-        data.bookings.forEach(b => {
-          if (b.booking_id > lastKnownAdminData.maxBookingId && !newAdminItemIds.bookings.includes(b.booking_id)) {
+      // 4. Check for cancelled/deleted quotes
+      lastKnownAdminIds.quotes.forEach(oldId => {
+        if (!currentQuoteIds.includes(oldId)) {
+          showToast(`⚠️ Wholesale quote #${oldId} was cancelled/removed!`, 'warning');
+        }
+      });
+
+      // 5. Check for new bookings
+      currentBookings.forEach(b => {
+        if (!lastKnownAdminIds.bookings.includes(b.booking_id)) {
+          showToast(`📅 New table reservation #${b.booking_id} for Table ${b.table_number} by ${b.reservation_name || 'Customer'} on ${b.booking_date} at ${b.booking_time}!`, 'success');
+          if (!newAdminItemIds.bookings.includes(b.booking_id)) {
             newAdminItemIds.bookings.push(b.booking_id);
           }
-        });
-      }
+        }
+      });
+
+      // 6. Check for cancelled/deleted bookings
+      lastKnownAdminIds.bookings.forEach(oldId => {
+        if (!currentBookingIds.includes(oldId)) {
+          showToast(`⚠️ Table reservation #${oldId} was cancelled/removed by user!`, 'warning');
+        }
+      });
+
+      // 7. Check for new users
+      currentUsers.forEach(u => {
+        if (!lastKnownAdminIds.users.includes(u.user_id)) {
+          showToast(`👤 New user registered: ${u.username} (${u.email})!`, 'info');
+        }
+      });
     }
 
-    // Update max tracked IDs
-    if (data.orders && data.orders.length > 0) {
-      lastKnownAdminData.maxOrderId = Math.max(...data.orders.map(o => o.order_id));
+    // Update the last known IDs
+    lastKnownAdminIds.orders = currentOrderIds;
+    lastKnownAdminIds.quotes = currentQuoteIds;
+    lastKnownAdminIds.bookings = currentBookingIds;
+    lastKnownAdminIds.users = currentUserIds;
+
+    // Update max tracked IDs compatibility
+    if (currentOrders.length > 0) {
+      lastKnownAdminData.maxOrderId = Math.max(...currentOrderIds);
     }
-    if (data.quotes && data.quotes.length > 0) {
-      lastKnownAdminData.maxQuoteId = Math.max(...data.quotes.map(q => q.quote_id));
+    if (currentQuotes.length > 0) {
+      lastKnownAdminData.maxQuoteId = Math.max(...currentQuoteIds);
     }
-    if (data.bookings && data.bookings.length > 0) {
-      lastKnownAdminData.maxBookingId = Math.max(...data.bookings.map(b => b.booking_id));
+    if (currentBookings.length > 0) {
+      lastKnownAdminData.maxBookingId = Math.max(...currentBookingIds);
     }
 
     // 1. Stats card counts

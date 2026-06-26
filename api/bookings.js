@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
       if (checkDate && checkTime) {
         const bookedRows = await query(
           `SELECT table_number FROM bookings 
-           WHERE booking_date = ? AND booking_time = ? AND status != 'cancelled'`,
+           WHERE booking_date = ? AND booking_time = ? AND status != 'cancelled' AND status != 'completed'`,
           [checkDate, checkTime]
         );
         const bookedTables = bookedRows.map(row => row.table_number);
@@ -86,7 +86,7 @@ module.exports = async function handler(req, res) {
       // Double-check availability for this slot
       const existing = await query(
         `SELECT booking_id FROM bookings 
-         WHERE booking_date = ? AND booking_time = ? AND table_number = ? AND status != 'cancelled'`,
+         WHERE booking_date = ? AND booking_time = ? AND table_number = ? AND status != 'cancelled' AND status != 'completed'`,
         [booking_date, booking_time, tableNum]
       );
 
