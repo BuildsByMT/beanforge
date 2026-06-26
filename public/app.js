@@ -149,19 +149,68 @@ async function fetchUserCart() {
   }
 }
 
-async function fetchDashboardData() {
+let dashboardSyncInterval = null;
+let lastKnownUserStatuses = { orders: null, quotes: null, bookings: null };
+
+async function fetchDashboardData(isBackground = false) {
   if (!state.token) return;
   try {
     const orders = await apiRequest('/orders');
-    renderOrders(orders);
-    
     const quotes = await apiRequest('/quotes');
-    renderQuotes(quotes);
-
     const bookings = await apiRequest('/bookings');
+
+    const newOrderStatuses = {};
+    orders.forEach(o => { newOrderStatuses[o.order_id] = o.status; });
+
+    const newQuoteStatuses = {};
+    quotes.forEach(q => { newQuoteStatuses[q.quote_id] = q.status; });
+
+    const newBookingStatuses = {};
+    bookings.forEach(b => { newBookingStatuses[b.booking_id] = b.status; });
+
+    // If we have previous state cached, notify user of updates in real-time
+    if (lastKnownUserStatuses.orders !== null) {
+      // Check order status updates
+      orders.forEach(o => {
+        const oldStatus = lastKnownUserStatuses.orders[o.order_id];
+        if (oldStatus !== undefined && oldStatus !== o.status) {
+          showToast(`🔔 Order #${o.order_id} status updated to ${o.status.toUpperCase()}`, 'info');
+        }
+      });
+
+      // Check quote status updates
+      quotes.forEach(q => {
+        const oldStatus = lastKnownUserStatuses.quotes[q.quote_id];
+        if (oldStatus !== undefined && oldStatus !== q.status) {
+          showToast(`☕ Wholesale quote #${q.quote_id} status updated to ${q.status.toUpperCase()}`, 'info');
+        }
+      });
+
+      // Check table booking status updates
+      bookings.forEach(b => {
+        const oldStatus = lastKnownUserStatuses.bookings[b.booking_id];
+        if (oldStatus !== undefined && oldStatus !== b.status) {
+          if (b.status === 'confirmed') {
+            showToast(`📅 Table reservation confirmed. See you soon!`, 'success');
+          } else {
+            showToast(`📅 Table reservation #${b.booking_id} status updated to ${b.status.toUpperCase()}`, 'info');
+          }
+        }
+      });
+    }
+
+    // Cache current statuses
+    lastKnownUserStatuses.orders = newOrderStatuses;
+    lastKnownUserStatuses.quotes = newQuoteStatuses;
+    lastKnownUserStatuses.bookings = newBookingStatuses;
+
+    renderOrders(orders);
+    renderQuotes(quotes);
     renderUserBookings(bookings);
   } catch (error) {
-    console.error('Error fetching dashboard details:', error);
+    if (!isBackground) {
+      console.error('Error fetching dashboard details:', error);
+    }
   }
 }
 
@@ -845,6 +894,15 @@ function showRouteView(viewName, sectionId = null) {
     lastKnownAdminIds = { orders: null, quotes: null, bookings: null, users: null };
   }
 
+  // Handle User Dashboard Polling Interval cleanup
+  if (viewName !== 'dashboard') {
+    if (dashboardSyncInterval) {
+      clearInterval(dashboardSyncInterval);
+      dashboardSyncInterval = null;
+    }
+    lastKnownUserStatuses = { orders: null, quotes: null, bookings: null };
+  }
+
   // Close mobile navigation dropdown on view change
   closeMobileMenu();
 
@@ -899,6 +957,18 @@ function showRouteView(viewName, sectionId = null) {
     if (navDash) navDash.classList.add('active');
     
     fetchDashboardData();
+
+    // Start background syncing if not already running
+    if (!dashboardSyncInterval) {
+      dashboardSyncInterval = setInterval(() => {
+        if (document.getElementById('dashboard-view').style.display !== 'none') {
+          fetchDashboardData(true);
+        } else {
+          clearInterval(dashboardSyncInterval);
+          dashboardSyncInterval = null;
+        }
+      }, 5000);
+    }
   } else if (viewName === 'booking') {
     if (!state.token) {
       showToast('Please sign in to book a table', 'warning');
