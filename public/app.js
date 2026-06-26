@@ -1529,7 +1529,7 @@ function renderUserBookings(bookings = []) {
     } else if (b.status === 'confirmed') {
       footerHTML = `
         <span class="order-notice-msg" style="color: #2ecc71; font-size: 0.85rem; font-weight: 600;">
-          <i class="fa-solid fa-circle-check"></i> Reservation confirmed by host. See you soon!
+          <i class="fa-solid fa-circle-check"></i> Reservation confirmed. See you soon!
         </span>
       `;
     } else {
