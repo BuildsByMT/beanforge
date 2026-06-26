@@ -834,6 +834,16 @@ function showRouteView(viewName, sectionId = null) {
   const adminView = document.getElementById('admin-view');
   const bookingView = document.getElementById('booking-view');
   
+  // Handle Admin Polling Interval cleanup
+  if (viewName !== 'admin') {
+    if (adminSyncInterval) {
+      clearInterval(adminSyncInterval);
+      adminSyncInterval = null;
+    }
+    lastKnownAdminData = { maxOrderId: 0, maxQuoteId: 0, maxBookingId: 0 };
+    newAdminItemIds = { orders: [], quotes: [], bookings: [] };
+  }
+
   // Close mobile navigation dropdown on view change
   closeMobileMenu();
 
@@ -861,6 +871,18 @@ function showRouteView(viewName, sectionId = null) {
     if (navAdmin) navAdmin.classList.add('active');
     
     fetchAdminData();
+
+    // Start background syncing if not already running
+    if (!adminSyncInterval) {
+      adminSyncInterval = setInterval(() => {
+        if (document.getElementById('admin-view').style.display !== 'none') {
+          fetchAdminData(true);
+        } else {
+          clearInterval(adminSyncInterval);
+          adminSyncInterval = null;
+        }
+      }, 5000);
+    }
   } else if (viewName === 'dashboard') {
     if (!state.token) {
       showToast('Please sign in to access your dashboard', 'warning');
@@ -933,12 +955,63 @@ function setView(viewName) {
 
 // --- Admin Panel API Actions ---
 
-async function fetchAdminData() {
+let adminSyncInterval = null;
+let lastKnownAdminData = { maxOrderId: 0, maxQuoteId: 0, maxBookingId: 0 };
+let newAdminItemIds = { orders: [], quotes: [], bookings: [] };
+
+async function fetchAdminData(isBackground = false) {
   if (!state.token || !state.user || state.user.role !== 'admin') return;
 
   try {
     const data = await apiRequest('/admin');
     
+    // Check for new items to show notifications
+    if (lastKnownAdminData.maxOrderId > 0 || lastKnownAdminData.maxQuoteId > 0 || lastKnownAdminData.maxBookingId > 0) {
+      // Check for new orders
+      const currentMaxOrder = data.orders && data.orders.length > 0 ? Math.max(...data.orders.map(o => o.order_id)) : 0;
+      if (currentMaxOrder > lastKnownAdminData.maxOrderId) {
+        showToast('🔔 New customer order placed!', 'info');
+        data.orders.forEach(o => {
+          if (o.order_id > lastKnownAdminData.maxOrderId && !newAdminItemIds.orders.includes(o.order_id)) {
+            newAdminItemIds.orders.push(o.order_id);
+          }
+        });
+      }
+
+      // Check for new quotes
+      const currentMaxQuote = data.quotes && data.quotes.length > 0 ? Math.max(...data.quotes.map(q => q.quote_id)) : 0;
+      if (currentMaxQuote > lastKnownAdminData.maxQuoteId) {
+        showToast('☕ New wholesale quote requested!', 'info');
+        data.quotes.forEach(q => {
+          if (q.quote_id > lastKnownAdminData.maxQuoteId && !newAdminItemIds.quotes.includes(q.quote_id)) {
+            newAdminItemIds.quotes.push(q.quote_id);
+          }
+        });
+      }
+
+      // Check for new bookings
+      const currentMaxBooking = data.bookings && data.bookings.length > 0 ? Math.max(...data.bookings.map(b => b.booking_id)) : 0;
+      if (currentMaxBooking > lastKnownAdminData.maxBookingId) {
+        showToast('📅 New table reservation received!', 'info');
+        data.bookings.forEach(b => {
+          if (b.booking_id > lastKnownAdminData.maxBookingId && !newAdminItemIds.bookings.includes(b.booking_id)) {
+            newAdminItemIds.bookings.push(b.booking_id);
+          }
+        });
+      }
+    }
+
+    // Update max tracked IDs
+    if (data.orders && data.orders.length > 0) {
+      lastKnownAdminData.maxOrderId = Math.max(...data.orders.map(o => o.order_id));
+    }
+    if (data.quotes && data.quotes.length > 0) {
+      lastKnownAdminData.maxQuoteId = Math.max(...data.quotes.map(q => q.quote_id));
+    }
+    if (data.bookings && data.bookings.length > 0) {
+      lastKnownAdminData.maxBookingId = Math.max(...data.bookings.map(b => b.booking_id));
+    }
+
     // 1. Stats card counts
     document.getElementById('admin-stat-users').textContent = data.stats.users;
     document.getElementById('admin-stat-orders').textContent = data.stats.orders;
@@ -1006,6 +1079,9 @@ async function fetchAdminData() {
         `;
 
         const tr = document.createElement('tr');
+        if (newAdminItemIds.orders.includes(o.order_id)) {
+          tr.className = 'new-row-glow';
+        }
         tr.innerHTML = `
           <td>#${o.order_id}</td>
           <td>
@@ -1032,7 +1108,9 @@ async function fetchAdminData() {
     renderAdminBookings(data.bookings);
 
   } catch (error) {
-    showToast(`Failed to fetch admin dashboard records: ${error.message}`, 'error');
+    if (!isBackground) {
+      showToast(`Failed to fetch admin dashboard records: ${error.message}`, 'error');
+    }
   }
 }
 
@@ -1634,6 +1712,9 @@ function renderAdminQuotes(quotes = []) {
     `;
 
     const tr = document.createElement('tr');
+    if (newAdminItemIds.quotes.includes(q.quote_id)) {
+      tr.className = 'new-row-glow';
+    }
     tr.innerHTML = `
       <td>#${q.quote_id}</td>
       <td>
@@ -1769,6 +1850,9 @@ function renderAdminBookings(bookings = []) {
     `;
 
     const tr = document.createElement('tr');
+    if (newAdminItemIds.bookings.includes(b.booking_id)) {
+      tr.className = 'new-row-glow';
+    }
     tr.innerHTML = `
       <td>#${b.booking_id}</td>
       <td>

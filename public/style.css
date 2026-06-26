@@ -1976,3 +1976,23 @@ select.form-input option {
 .dashboard-grid {
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
 }
+
+/* --- New Row Glow Animation for Real-Time Sync --- */
+
+.new-row-glow {
+  animation: row-glow-highlight 4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes row-glow-highlight {
+  0% {
+    background-color: rgba(241, 196, 15, 0.28);
+    box-shadow: inset 0 0 15px rgba(241, 196, 15, 0.4);
+  }
+  20% {
+    background-color: rgba(241, 196, 15, 0.18);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
