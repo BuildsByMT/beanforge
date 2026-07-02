@@ -48,8 +48,8 @@ const server = http.createServer(async (req, res) => {
     "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; " +
     "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; " +
     "img-src 'self' data: https:; " +
-    "script-src 'self' 'unsafe-inline'; " +
-    "connect-src 'self';"
+    "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com; " +
+    "connect-src 'self' https://vitals.vercel-insights.com;"
   );
 
   if (req.method === 'OPTIONS') {
